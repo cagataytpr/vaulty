@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "526849381522",
+    "project_id": "vaulty-8d608",
+    "storage_bucket": "vaulty-8d608.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526849381522:android:acc9e2371fcdf24b9f424b",
+        "android_client_info": {
+          "package_name": "com.example.vaulty"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBz_PNc2DItNn8eFwrUZ3Qp1PnTg9kVDU8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
