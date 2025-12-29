@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:vaulty/login_screen.dart';
+import 'package:vaulty/onboarding_screen.dart';
 import 'firebase_options.dart'; // Otomatik oluşan dosyan
 import 'registerscreen.dart';
 
@@ -32,7 +34,7 @@ class VaultyApp extends StatelessWidget {
           primary: Colors.redAccent,
         ),
       ),
-      home: const HomeScreen(),
+      home: const OnboardingScreen(),
     );
   }
 }
@@ -69,7 +71,7 @@ class HomeScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const RegisterScreen(),
+                      builder: (context) => const LoginScreen(),
                     ),
                   );
                 

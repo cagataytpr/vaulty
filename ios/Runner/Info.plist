@@ -46,4 +46,6 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>
+<key>NSFaceIDUsageDescription</key>
+<string>Şifrelerinize erişmek için FaceID kullanmanız gerekmektedir.</string>
 </plist>
