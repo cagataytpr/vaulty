@@ -1,4 +1,5 @@
 import 'package:local_auth/local_auth.dart';
+import 'dart:developer';
 
 class AuthService {
   static final LocalAuthentication _auth = LocalAuthentication();
@@ -22,7 +23,7 @@ class AuthService {
         ),
       );
     } catch (e) {
-      print("Hata oluştu: $e");
+      log("Hata oluştu: $e");
       return false;
     }
   }

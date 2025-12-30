@@ -50,7 +50,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Hesap Oluştur")),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),

@@ -41,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Vaulty Giriş")),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
