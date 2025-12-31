@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vaulty/settings_page.dart';
-import 'main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'auth_service.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'password_generator_page.dart';
 import 'add_password_sheet.dart';
+import 'auth_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,28 +29,18 @@ class _HomePageState extends State<HomePage> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor:Theme.of(context).scaffoldBackgroundColor,       
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: _pages[_currentIndex],
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
+          onTap: (index) => setState(() => _currentIndex = index),
           backgroundColor: Theme.of(context).cardColor,
           selectedItemColor: Colors.redAccent,
           unselectedItemColor: Colors.grey,
           showUnselectedLabels: false,
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.lock),
-              label: 'Kasa',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.security),
-              label: 'Üretici',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.lock), label: 'Kasa'),
+            BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Üretici'),
             BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Ayarlar'),
           ],
         ),
@@ -76,111 +66,231 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class VaultListBody extends StatelessWidget {
+class VaultListBody extends StatefulWidget {
   const VaultListBody({super.key});
 
   @override
+  State<VaultListBody> createState() => _VaultListBodyState();
+}
+
+class _VaultListBodyState extends State<VaultListBody> {
+  String _searchQuery = "";
+  bool _showReport = false;
+  int _riskCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDailyReportStatus();
+  }
+
+  // Günde bir kez raporu gösterip göstermeyeceğimizi kontrol eder
+  Future<void> _checkDailyReportStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String today = DateTime.now().toIso8601String().substring(0, 10);
+    final String? lastCheck = prefs.getString('last_security_check');
+
+    if (lastCheck != today) {
+      setState(() => _showReport = true);
+      await prefs.setString('last_security_check', today);
+    }
+  }
+
+  // Güvenlik taraması yapan mantık
+  void _performAudit(List<QueryDocumentSnapshot> docs) {
+    int weak = 0;
+    Map<String, int> counts = {};
+    for (var doc in docs) {
+      String pass = doc['password'];
+      if (pass.length < 8) weak++;
+      counts[pass] = (counts[pass] ?? 0) + 1;
+    }
+    int reused = counts.values.where((c) => c > 1).length;
+    
+    // Değişiklik varsa state'i güncelle (Sonsuz döngü olmaması için microtask ile)
+    if (_riskCount != (weak + reused)) {
+      Future.microtask(() {
+        if (mounted) setState(() => _riskCount = weak + reused);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser?.uid)
-          .collection('passwords')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) return const Center(child: Text("Hata!", style: TextStyle(color: Colors.white)));
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: Colors.redAccent));
-        if (snapshot.data!.docs.isEmpty) return const Center(child: Text("Henüz hiç şifre eklemedin.", style: TextStyle(color: Colors.grey)));
+    return Column(
+      children: [
+        // --- 1. ARAMA ÇUBUĞU ---
+        Padding(
+          padding: const EdgeInsets.fromLTRB(15, 40, 15, 10),
+          child: TextField(
+            onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: "Şifrelerde ara...",
+              hintStyle: const TextStyle(color: Colors.grey),
+              prefixIcon: const Icon(Icons.search, color: Colors.redAccent),
+              filled: true,
+              fillColor: Theme.of(context).cardColor,
+              contentPadding: EdgeInsets.zero,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+            ),
+          ),
+        ),
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(15),
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (context, index) {
-            var doc = snapshot.data!.docs[index];
-            return Dismissible(
-              key: Key(doc.id),
-              direction: DismissDirection.endToStart,
-              confirmDismiss: (direction) async {
-                final bool confirmRes = await showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    backgroundColor: Theme.of(context).cardColor,
-                    title: const Text("Şifreyi Sil", style: TextStyle(fontWeight: FontWeight.bold)),
-                    content: const Text("Bu işlem geri alınamaz. Emin misiniz?", style: TextStyle(color: Colors.grey)),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("İptal")),
-                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Sil", style: TextStyle(color: Colors.redAccent))),
-                    ],
+        // --- 2. GÜNLÜK GÜVENLİK RAPORU (ANIMASYONLU) ---
+        if (_showReport && _riskCount > 0 && _searchQuery.isEmpty)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 500),
+            margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.redAccent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.gpp_maybe, color: Colors.redAccent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Kuzen, bugün için $_riskCount güvenlik riski buldum. Bir göz at istersen.",
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
-                ) ?? false;
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                  onPressed: () => setState(() => _showReport = false),
+                )
+              ],
+            ),
+          ),
 
-                if (confirmRes) {
-                  return await AuthService.authenticate();
-                }
-                return false;
-              },
-              onDismissed: (_) {
-                FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).collection('passwords').doc(doc.id).delete();
-              },
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                color: Colors.redAccent.withValues(alpha: 0.7),
-                child: const Icon(Icons.delete, color: Colors.white),
-              ),
-              child: Card(
-                color: Theme.of(context).cardColor,
-                child: ListTile(
-                  leading: getIconForTitle(doc['title']),
-                  title: Text(doc['title']),
-                  subtitle: const Text("••••••••", style: TextStyle(color: Colors.grey)),
-                  onTap: () async {
-                    if (await AuthService.authenticate()) {
-                      if (!context.mounted) return;
-                      showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Theme.of(context).cardColor,
-                        builder: (context) => Padding(
-                          padding: const EdgeInsets.all(30.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(doc['title'], style: const TextStyle(fontSize: 20)),
-                              const SizedBox(height: 20),
-                              Row(
-                                children: [
-                                  Expanded(child: Text(doc['password'], style: const TextStyle(color: Colors.redAccent, fontSize: 22))),
-                                  IconButton(icon: const Icon(Icons.copy, color: Colors.white), onPressed: () => Clipboard.setData(ClipboardData(text: doc['password']))),
-                                ],
-                              ),
-                            ],
+        // --- 3. LİSTE ALANI VE BOŞ KASA ---
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .collection('passwords')
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) return const Center(child: Text("Hata!"));
+              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: Colors.redAccent));
+
+              final allDocs = snapshot.data!.docs;
+              _performAudit(allDocs); // Arka planda taramayı yap
+
+              final filteredDocs = allDocs.where((doc) {
+                return doc['title'].toString().toLowerCase().contains(_searchQuery);
+              }).toList();
+
+              // BOŞ KASA TASARIMI
+              if (filteredDocs.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(30.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Opacity(
+                          opacity: 0.3,
+                          child: Icon(
+                            _searchQuery.isEmpty ? Icons.lock_open_rounded : Icons.search_off_rounded,
+                            size: 120, color: Colors.redAccent,
                           ),
                         ),
-                      );
-                    }
-                  },
-                ),
-              ),
-            );
-          },
-        );
-      },
+                        const SizedBox(height: 20),
+                        Text(
+                          _searchQuery.isEmpty ? "Kasan şu an boş , Sırların bizimle güvende!" : "Aradığın sırrı bulamadık.",
+                          style: const TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                        if (_searchQuery.isEmpty) ...[
+                          const SizedBox(height: 30),
+                          ElevatedButton(
+                            onPressed: () => showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (context) => const AddPasswordSheet(),
+                            ),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                            child: const Text("İLK ŞİFREYİ EKLE", style: TextStyle(color: Colors.white)),
+                          )
+                        ]
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(15),
+                itemCount: filteredDocs.length,
+                itemBuilder: (context, index) {
+                  var doc = filteredDocs[index];
+                  return Dismissible(
+                    key: Key(doc.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      color: Colors.redAccent.withOpacity(0.7),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    onDismissed: (_) {
+                      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).collection('passwords').doc(doc.id).delete();
+                    },
+                    child: Card(
+                      color: Theme.of(context).cardColor,
+                      child: ListTile(
+                        leading: getIconForTitle(doc['title']),
+                        title: Text(doc['title']),
+                        subtitle: const Text("••••••••", style: TextStyle(color: Colors.grey)),
+                        onTap: () async {
+                          if (await AuthService.authenticate()) {
+                            if (!context.mounted) return;
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Theme.of(context).cardColor,
+                              builder: (context) => Padding(
+                                padding: const EdgeInsets.all(30.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(doc['title'], style: const TextStyle(fontSize: 20)),
+                                    const SizedBox(height: 20),
+                                    Row(
+                                      children: [
+                                        Expanded(child: Text(doc['password'], style: const TextStyle(color: Colors.redAccent, fontSize: 22))),
+                                        IconButton(icon: const Icon(Icons.copy, color: Colors.white), onPressed: () => Clipboard.setData(ClipboardData(text: doc['password']))),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
-// home_page.dart dosyasının en sonuna ekle
+
+// İKON SEÇİCİ
 Widget getIconForTitle(String title) {
   String t = title.toLowerCase();
-  
   if (t.contains("instagram")) return const Icon(Icons.camera_alt, color: Colors.purpleAccent);
   if (t.contains("facebook")) return const Icon(Icons.facebook, color: Colors.blueAccent);
   if (t.contains("google") || t.contains("gmail")) return const Icon(Icons.g_mobiledata, color: Colors.redAccent, size: 30);
-  if (t.contains("twitter") || t.contains(" x ")) return const Icon(Icons.close, color: Colors.white); 
-  if (t.contains("bank") || t.contains("hesap") || t.contains("kart")) return const Icon(Icons.account_balance, color: Colors.amber);
-  if (t.contains("netflix")) return const Icon(Icons.movie, color: Colors.red);
-  if (t.contains("spotify")) return const Icon(Icons.music_note, color: Colors.green);
-  if (t.contains("github")) return const Icon(Icons.code, color: Colors.white);
-  
+  if (t.contains("bank") || t.contains("hesap")) return const Icon(Icons.account_balance, color: Colors.amber);
   return const Icon(Icons.vpn_key, color: Colors.redAccent);
 }

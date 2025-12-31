@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'main.dart'; // VaultyApp'e erişmek için gerekli
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore hatası için 
+import 'export_service.dart';                         // ExportService hatası için
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -66,6 +68,29 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
             ),
+            // SettingsPage içindeki Column'un uygun bir yerine ekle:
+ListTile(
+  leading: const Icon(Icons.picture_as_pdf, color: Colors.redAccent),
+  title: const Text("Şifreleri PDF Olarak Yedekle"),
+  subtitle: const Text("Tüm şifrelerini içeren bir dosya oluşturur."),
+  onTap: () async {
+    // Firebase'den güncel verileri çekiyoruz
+    final user = FirebaseAuth.instance.currentUser;
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user?.uid)
+        .collection('passwords')
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      await ExportService.exportPasswordsToPdf(snapshot.docs);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Yedeklenecek şifre bulunamadı!")),
+      );
+    }
+  },
+),
             
             ListTile(
               leading: const Icon(Icons.info_outline, color: Colors.grey),
@@ -82,6 +107,7 @@ class SettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
           ],
+          
         ),
       ),
     );
