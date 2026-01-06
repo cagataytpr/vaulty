@@ -1,30 +1,58 @@
 import 'package:local_auth/local_auth.dart';
 import 'dart:developer';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
-  static final LocalAuthentication _auth = LocalAuthentication();
+  static final LocalAuthentication _localAuth = LocalAuthentication();
+  static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
+  // --- 1. BİYOMETRİK DOĞRULAMA (Kasa Açılışında) ---
   static Future<bool> authenticate() async {
     try {
-      // Cihazın biyometrik kapasitesini kontrol et
-      final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
-      final bool canAuthenticate =
-          canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+      final bool canCheck = await _localAuth.canCheckBiometrics;
+      final bool isSupported = await _localAuth.isDeviceSupported();
 
-      if (!canAuthenticate) return false;
+      if (!canCheck && !isSupported) return false;
 
-      // EN GÜNCEL VE HATASIZ YÖNTEM:
-      return await _auth.authenticate(
+      return await _localAuth.authenticate(
         localizedReason: 'Şifrelerinize erişmek için lütfen kimliğinizi doğrulayın',
-        // Eğer 'options' hata veriyorsa, AuthenticationOptions'ı paketin içinden tam çağıralım
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: false,
         ),
       );
     } catch (e) {
-      log("Hata oluştu: $e");
+      log("Biyometrik hata: $e");
       return false;
     }
+  }
+
+  // --- 2. 2FA: E-POSTA DOĞRULAMA GÖNDERME ---
+  static Future<void> sendVerificationEmail() async {
+    try {
+      User? user = _firebaseAuth.currentUser;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        log("Doğrulama e-postası gönderildi.");
+      }
+    } catch (e) {
+      log("E-posta gönderme hatası: $e");
+    }
+  }
+
+  // --- 3. 2FA: DOĞRULAMA DURUMUNU KONTROL ET ---
+  static Future<bool> isEmailVerified() async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      // Firebase'den güncel veriyi çekmek için reload şart
+      await user.reload();
+      return _firebaseAuth.currentUser!.emailVerified;
+    }
+    return false;
+  }
+
+  // --- 4. ÇIKIŞ YAPMA ---
+  static Future<void> signOut() async {
+    await _firebaseAuth.signOut();
   }
 }

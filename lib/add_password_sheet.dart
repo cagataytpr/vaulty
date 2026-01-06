@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'encryption_service.dart';
+
 
 class AddPasswordSheet extends StatefulWidget {
   const AddPasswordSheet({super.key});
@@ -32,9 +34,15 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
   void _saveToFirebase() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && _titleController.text.isNotEmpty) {
+      // ÇÖZÜM: Hem şifreyi hem de user.uid'yi gönderiyoruz
+      String encryptedText = EncryptionService.encrypt(
+        _passController.text, 
+        user.uid
+      );
+      
       await FirebaseFirestore.instance.collection('users').doc(user.uid).collection('passwords').add({
         'title': _titleController.text,
-        'password': _passController.text,
+        'password': encryptedText,
         'createdAt': FieldValue.serverTimestamp(),
       });
       if (mounted) Navigator.pop(context);

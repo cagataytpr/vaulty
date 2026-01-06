@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
 import 'registerscreen.dart';
+import 'email_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,7 +16,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // 1. ŞİFRE SIFIRLAMA FONKSİYONU
   Future<void> resetPassword() async {
     if (_emailController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,16 +44,27 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> loginUser() async {
     setState(() => _isLoading = true);
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+
+      if (userCredential.user != null) {
+        if (userCredential.user!.emailVerified) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        } else {
+          setState(() => _isLoading = false);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
+          );
+        }
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -65,82 +76,152 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.symmetric(horizontal: 30.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // --- ADMİN HIZLI GİRİŞ BUTONU ---
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 30),
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
-                    border: Border.all(color: Colors.amber, width: 2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      _emailController.text = "testadmin@gmail.com";
-                      _passwordController.text = "123456";
+                const SizedBox(height: 20),
+                
+                // --- DEV MODE ---
+                Align(
+                  alignment: Alignment.topRight,
+                  child: InkWell(
+                    onTap: () {
+                      _emailController.text = "11feyza@gmail.com";
+                      _passwordController.text = "11feyza@gmail.com";
                       loginUser();
                     },
-                    icon: const Icon(Icons.admin_panel_settings, color: Colors.amber),
-                    label: const Text(
-                      "ADMIN",
-                      style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.withOpacity(0.5)),
+                      ),
+                      child: const Text("DEV MODE", style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
 
-                const Icon(Icons.lock_person, size: 100, color: Colors.redAccent),
-                const SizedBox(height: 30),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: "Email", border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: "Şifre", border: OutlineInputBorder()),
+                const SizedBox(height: 20),
+
+                // --- LOGO ---
+                Column(
+                  children: [
+                    Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.redAccent.withOpacity(0.2),
+                            blurRadius: 50,
+                            spreadRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                    ),
+                    const SizedBox(height: 15),
+                    const Text("VAULTY", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4)),
+                    Text("SECURE DATA TERMINAL", style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10, letterSpacing: 2)),
+                  ],
                 ),
 
-                // --- ŞİFREMİ UNUTTUM BUTONU ---
+                const SizedBox(height: 50),
+
+                // --- INPUTS ---
+                _buildGlassInput(controller: _emailController, label: "Email", icon: Icons.alternate_email_rounded),
+                const SizedBox(height: 20),
+                _buildGlassInput(controller: _passwordController, label: "Şifre", icon: Icons.lock_outline_rounded, isPassword: true),
+
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: resetPassword,
-                    child: const Text(
-                      "Şifremi Unuttum",
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
+                    child: Text("Şifremi Unuttum", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
                   ),
                 ),
 
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : loginUser,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    minimumSize: const Size(double.infinity, 50),
+                const SizedBox(height: 20),
+
+                // --- LOGIN BUTTON ---
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(color: Colors.redAccent.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 5)),
+                    ],
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Giriş Yap", style: TextStyle(color: Colors.white)),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : loginUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 60),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      elevation: 0,
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("SİSTEME GİRİŞ YAP", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  ),
                 ),
+
+                const SizedBox(height: 15),
+
+                // --- KAYIT OL LİNKİ (BURAYA EKLENDİ) ---
                 TextButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                    );
                   },
-                  child: const Text("Hesabın yok mu? Buradan Kayıt Ol", style: TextStyle(color: Colors.redAccent)),
+                  child: RichText(
+                    text: TextSpan(
+                      text: "Erişimin yok mu? ",
+                      style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+                      children: const [
+                        TextSpan(
+                          text: "KAYIT OL",
+                          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+                
+                const SizedBox(height: 20),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassInput({required TextEditingController controller, required String label, required IconData icon, bool isPassword = false}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+          prefixIcon: Icon(icon, color: Colors.redAccent.withOpacity(0.7)),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         ),
       ),
     );

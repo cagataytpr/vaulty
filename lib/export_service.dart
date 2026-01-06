@@ -32,6 +32,7 @@ class ExportService {
     final file = File("${output.path}/vaulty_yedek.pdf");
     await file.writeAsBytes(await pdf.save());
 
+    // ignore: deprecated_member_use
     await Share.shareXFiles([XFile(file.path)], text: 'Vaulty Şifre Yedeği');
   }
 }
