@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_snake_navigationbar/flutter_snake_navigationbar.dart';
 import 'package:vaulty/view_models/home_view_model.dart';
 import 'package:vaulty/views/home/widgets/password_card.dart';
+import 'package:vaulty/l10n/app_localizations.dart';
 
 // Old imports to be redirected or removed
 import 'package:vaulty/views/home/widgets/add_password_sheet.dart';
@@ -176,7 +177,7 @@ class _VaultListBodyState extends State<VaultListBody> {
        // Skip errors
        if(pass.startsWith("User not logged in") || pass.startsWith("Hata:")) continue;
        
-       if (pass.length < 8) risks.add({"title": doc.title, "reason": "Şifre çok kısa (Zayıf)"});
+       if (pass.length < 8) risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskWeak});
        counts[pass] = (counts[pass] ?? 0) + 1;
     }
 
@@ -192,7 +193,7 @@ class _VaultListBodyState extends State<VaultListBody> {
          // We only add 'duplicate' warning if it's not already added? 
          // Original code loop 1: add short. loop 2: add duplicate. 
          // So yes, it can appear twice.
-          risks.add({"title": doc.title, "reason": "Bu şifre başka hesapta da kullanılıyor."});
+          risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskReused});
        }
     }
 
@@ -206,10 +207,10 @@ class _VaultListBodyState extends State<VaultListBody> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("GÜVENLİK ANALİZ RAPORU", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            Text(AppLocalizations.of(context)!.securityReportTitle, style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 20),
             risks.isEmpty
-                ? const Text("Harikasın kanka, tüm şifrelerin mermi gibi.", style: TextStyle(color: Colors.white70))
+                ? Text(AppLocalizations.of(context)!.securityNoRisks, style: const TextStyle(color: Colors.white70))
                 : Flexible(
                     child: ListView.builder(
                       shrinkWrap: true,
@@ -232,6 +233,7 @@ class _VaultListBodyState extends State<VaultListBody> {
   Widget build(BuildContext context) {
     return Consumer<HomeViewModel>(
       builder: (context, viewModel, child) {
+        final l10n = AppLocalizations.of(context)!;
         return Column(
           children: [
             Padding(
@@ -251,7 +253,7 @@ class _VaultListBodyState extends State<VaultListBody> {
                   onChanged: (value) => viewModel.setSearchQuery(value),
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: "Sırlarında ara...",
+                    hintText: l10n.searchPlaceholder,
                     hintStyle: const TextStyle(color: Colors.grey),
                     prefixIcon: const Icon(Icons.search_rounded, color: Colors.redAccent),
                     filled: true,
@@ -292,7 +294,7 @@ class _VaultListBodyState extends State<VaultListBody> {
                       const SizedBox(width: 15),
                       Expanded(
                         child: Text(
-                          "Kuzen, senin için ${viewModel.riskCount} risk buldum. İncelemek için dokun.",
+                          AppLocalizations.of(context)!.securityRiskFound(viewModel.riskCount),
                           style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -312,6 +314,11 @@ class _VaultListBodyState extends State<VaultListBody> {
   }
 
   Widget _buildList(HomeViewModel viewModel) {
+    final l10n = AppLocalizations.of(context)!;
+    if (viewModel.isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.redAccent));
+    }
+
     if (viewModel.passwords.isEmpty) {
       return Center(
         child: Column(
@@ -324,9 +331,14 @@ class _VaultListBodyState extends State<VaultListBody> {
             ),
             const SizedBox(height: 20),
             Text(
-              viewModel.searchQuery.isEmpty ? "Kasa şimdilik sessiz..." : "İz bulunamadı.",
+              viewModel.searchQuery.isEmpty ? l10n.emptyVault : "İz bulunamadı.",
               style: const TextStyle(color: Colors.grey),
             ),
+            if (viewModel.searchQuery.isEmpty)
+               Padding(
+                 padding: const EdgeInsets.only(top: 8.0),
+                 child: Text(l10n.emptyVaultSub, style: const TextStyle(color: Colors.white30, fontSize: 12)),
+               ),
           ],
         ),
       );

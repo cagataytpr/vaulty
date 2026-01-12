@@ -19,7 +19,7 @@ class AuthService {
   }
 
   // --- 1. BİYOMETRİK DOĞRULAMA (Kasa Açılışında) ---
-  static Future<bool> authenticate() async {
+  static Future<bool> authenticate({String? localizedReason}) async {
     try {
       final bool canCheck = await _localAuth.canCheckBiometrics;
       final bool isSupported = await _localAuth.isDeviceSupported();
@@ -27,7 +27,7 @@ class AuthService {
       if (!canCheck && !isSupported) return false;
 
       return await _localAuth.authenticate(
-        localizedReason: 'Şifrelerinize erişmek için lütfen kimliğinizi doğrulayın',
+        localizedReason: localizedReason ?? 'Şifrelerinize erişmek için lütfen kimliğinizi doğrulayın',
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: false,
@@ -40,8 +40,8 @@ class AuthService {
   }
 
   // Helper alias for clarify or specific use cases requested by user
-  static Future<bool> authenticateUser() async {
-    return await authenticate();
+  static Future<bool> authenticateUser({String? localizedReason}) async {
+    return await authenticate(localizedReason: localizedReason);
   }
 
   // --- 2. 2FA: E-POSTA DOĞRULAMA GÖNDERME ---

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vaulty/main.dart';
 import 'package:vaulty/views/auth/login_screen.dart';
+import 'package:vaulty/l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -13,32 +14,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  // Verileri siber temaya göre güncelledik
-  List<Map<String, dynamic>> onboardingData = [
-    {
-      "title": "Tüm Şifrelerin Güvende",
-      "text": "Vaulty ile şifrelerini tek bir noktada, askeri düzeyde şifrelemeyle sakla.",
-      "icon": Icons.enhanced_encryption_rounded
-    },
-    {
-      "title": "Hızlı Erişim",
-      "text": "İstediğin sırra saniyeler içinde ulaş, güvenle kopyala ve kullan.",
-      "icon": Icons.bolt_rounded
-    },
-    {
-      "title": "Sadece Senin İçin",
-      "text": "Verilerin sadece senin cihazında üretilen anahtarlarla korunur.",
-      "icon": Icons.fingerprint_rounded
-    },
-    {
-      "title": "VAULTY",
-      "text": "Güvenli Alan Hazır",
-      "icon": "logo" 
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    // Verileri siber temaya göre güncelledik - HERE WE BUILD THE LIST DYNAMICALLY TO USE l10n
+    final List<Map<String, dynamic>> onboardingData = [
+      {
+        "title": l10n.onboardingTitle1,
+        "text": l10n.onboardingDesc1,
+        "icon": Icons.enhanced_encryption_rounded
+      },
+      {
+        "title": l10n.onboardingTitle2,
+        "text": l10n.onboardingDesc2,
+        "icon": Icons.bolt_rounded
+      },
+      {
+        "title": l10n.onboardingTitle3,
+        "text": l10n.onboardingDesc3,
+        "icon": Icons.fingerprint_rounded
+      },
+      {
+        "title": "VAULTY",
+        "text": l10n.vaultyReady,
+        "icon": "logo" 
+      },
+    ];
+
     bool isLastPage = _currentPage == onboardingData.length - 1;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -52,7 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             itemCount: onboardingData.length,
             itemBuilder: (context, index) {
               if (index == onboardingData.length - 1) {
-                return _buildFinalPage();
+                return _buildFinalPage(l10n);
               }
 
               return Padding(
@@ -108,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   TextButton(
                     onPressed: () => _controller.jumpToPage(onboardingData.length - 1),
-                    child: const Text("ATLA", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    child: Text(l10n.skip.toUpperCase(), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                   ),
                   Row(
                     children: List.generate(
@@ -140,7 +143,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildFinalPage() {
+  Widget _buildFinalPage(AppLocalizations l10n) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
@@ -175,9 +178,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 color: isDark ? Colors.white : Colors.black87,
               ),
             ),
-            const Text(
-              'Terminal Erişimi Hazır',
-              style: TextStyle(color: Colors.grey, fontSize: 16, letterSpacing: 2),
+            Text(
+              l10n.terminalAccessReady,
+              style: const TextStyle(color: Colors.grey, fontSize: 16, letterSpacing: 2),
             ),
             const SizedBox(height: 80),
             
@@ -205,9 +208,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'SİSTEMİ BAŞLAT',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2),
+                child: Text(
+                  l10n.startSystem.toUpperCase(),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2),
                 ),
               ),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vaulty/data/services/auth_service.dart';
 import 'package:vaulty/views/home/home_page.dart';
+import 'package:vaulty/l10n/app_localizations.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({super.key});
@@ -51,6 +52,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -59,19 +61,19 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           children: [
             const Icon(Icons.mail_outline, size: 100, color: Colors.amber),
             const SizedBox(height: 20),
-            const Text("Onay Maili Gönderildi!", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const Text("Lütfen e-posta kutunu (spam dahil) kontrol et.", textAlign: TextAlign.center),
+            Text(l10n.emailSentTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(l10n.checkSpam, textAlign: TextAlign.center),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => AuthService.sendVerificationEmail(),
-              child: const Text("Tekrar Gönder"),
+              child: Text(l10n.resend),
             ),
             TextButton(
               onPressed: () async {
                 await AuthService.signOut();
                 if (context.mounted) Navigator.pop(context);
               },
-              child: const Text("Vazgeç ve Çıkış Yap"),
+              child: Text(l10n.cancelAndLogout),
             ),
           ],
         ),

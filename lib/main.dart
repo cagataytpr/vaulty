@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:vaulty/l10n/app_localizations.dart';
 import 'view_models/home_view_model.dart';
+import 'view_models/locale_view_model.dart';
 import 'package:vaulty/views/home/home_page.dart';
 import 'package:vaulty/views/auth/login_screen.dart';
 import 'package:vaulty/views/onboarding_screen.dart';
@@ -23,6 +26,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => HomeViewModel()),
+        ChangeNotifierProvider(create: (_) => LocaleViewModel()),
       ],
       child: const VaultyApp(),
     ),
@@ -155,6 +159,9 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Watch locale changes
+    final localeViewModel = context.watch<LocaleViewModel>();
+
     // Veriler yüklenirken siyah bir ekran yerine SplashScreen mantığına uygun bekleme yapıyoruz
     if (_isLoading) {
       return MaterialApp(
@@ -174,6 +181,19 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
         navigatorKey: navigatorKey, // Global Key Eklendi
         debugShowCheckedModeBanner: false,
         title: 'Vaulty',
+
+        // Localization Config
+        locale: localeViewModel.locale, // Bind locale to ViewModel
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'), // English
+          Locale('tr'), // Turkish
+        ],
         
         theme: ThemeData(
           brightness: Brightness.light,

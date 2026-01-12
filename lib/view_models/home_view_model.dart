@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../data/models/password_model.dart';
 import '../data/repositories/password_repository.dart';
 
@@ -10,24 +11,53 @@ class HomeViewModel extends ChangeNotifier {
   List<PasswordModel> _allPasswords = [];
   List<PasswordModel> _filteredPasswords = [];
   StreamSubscription<List<PasswordModel>>? _subscription;
+  StreamSubscription<User?>? _authSubscription;
+  bool _isLoading = true; // Default to true
 
   String _searchQuery = "";
   int _riskCount = 0;
 
   List<PasswordModel> get passwords => _filteredPasswords;
-  List<PasswordModel> get allPasswordsRaw => _allPasswords; // For risk analysis dialog if needed
+  List<PasswordModel> get allPasswordsRaw => _allPasswords;
   int get riskCount => _riskCount;
   String get searchQuery => _searchQuery;
+  bool get isLoading => _isLoading;
 
   HomeViewModel() {
-    _init();
+    _listenToAuthChanges();
   }
 
-  void _init() {
+  void _listenToAuthChanges() {
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      _subscription?.cancel(); // Cancel exiting password stream
+      
+      if (user != null) {
+        // User logged in, subscribe to their data
+        _isLoading = true;
+        notifyListeners();
+        _subscribeToPasswords();
+      } else {
+        // User logged out
+        _allPasswords = [];
+        _filteredPasswords = [];
+        _isLoading = false;
+        notifyListeners();
+      }
+    });
+  }
+
+  void _subscribeToPasswords() {
     _subscription = _repository.getPasswordsStream().listen((passwords) {
       _allPasswords = passwords;
       _performAudit();
       _filterPasswords();
+      _isLoading = false;
+      notifyListeners();
+    }, onError: (e) {
+      // Handle stream errors (e.g. permission denied on logout)
+      _allPasswords = [];
+      _filteredPasswords = [];
+      _isLoading = false;
       notifyListeners();
     });
   }
@@ -87,6 +117,7 @@ class HomeViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _subscription?.cancel();
+    _authSubscription?.cancel();
     super.dispose();
   }
 }

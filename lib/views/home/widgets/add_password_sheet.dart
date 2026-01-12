@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../view_models/home_view_model.dart';
-// Note: Encryption is imported only for HomeViewModel? No, logic is in VM.
-// We remove EncryptionService and Firestore imports.
+import 'package:vaulty/l10n/app_localizations.dart';
 
 class AddPasswordSheet extends StatefulWidget {
   const AddPasswordSheet({super.key});
@@ -15,7 +14,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
   final _titleController = TextEditingController();
   final _passController = TextEditingController();
 
-  Map<String, dynamic> _checkStrength(String password) {
+  Map<String, dynamic> _checkStrength(String password, AppLocalizations l10n) {
     if (password.isEmpty) return {"label": "", "color": Colors.transparent, "percent": 0.0};
     
     double strength = 0;
@@ -24,10 +23,10 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
     if (password.contains(RegExp(r'[0-9]'))) strength += 0.25;
     if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.25;
 
-    if (strength <= 0.25) return {"label": "ÇOK ZAYIF", "color": Colors.redAccent, "percent": 0.25};
-    if (strength <= 0.50) return {"label": "ZAYIF", "color": Colors.orangeAccent, "percent": 0.50};
-    if (strength <= 0.75) return {"label": "GÜVENLİ", "color": Colors.blueAccent, "percent": 0.75};
-    return {"label": "KRİPTO DÜZEYİ!", "color": Colors.greenAccent, "percent": 1.0};
+    if (strength <= 0.25) return {"label": l10n.veryWeak.toUpperCase(), "color": Colors.redAccent, "percent": 0.25};
+    if (strength <= 0.50) return {"label": l10n.weak.toUpperCase(), "color": Colors.orangeAccent, "percent": 0.50};
+    if (strength <= 0.75) return {"label": l10n.secure.toUpperCase(), "color": Colors.blueAccent, "percent": 0.75};
+    return {"label": l10n.cryptoLevel.toUpperCase(), "color": Colors.greenAccent, "percent": 1.0};
   }
 
   void _save(BuildContext context) async {
@@ -38,14 +37,17 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
         _passController.text
       );
       
-      if (mounted) Navigator.pop(context);
+      
+      if (!mounted) return;
+      Navigator.pop(context);
     }
   }
 
 
   @override
   Widget build(BuildContext context) {
-    var strength = _checkStrength(_passController.text);
+    final l10n = AppLocalizations.of(context)!;
+    var strength = _checkStrength(_passController.text, l10n);
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -74,7 +76,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
               const SizedBox(height: 25),
               
               Text(
-                "YENİ VERİ ERİŞİMİ",
+                l10n.newDataAccess.toUpperCase(),
                 style: TextStyle(
                   fontSize: 18, 
                   fontWeight: FontWeight.bold, 
@@ -86,7 +88,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
 
               _buildTerminalInput(
                 controller: _titleController,
-                label: "BAŞLIK",
+                label: l10n.websiteName.toUpperCase(),
                 icon: Icons.label_important_outline_rounded,
                 isDark: isDark,
               ),
@@ -95,7 +97,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
 
               _buildTerminalInput(
                 controller: _passController,
-                label: "GİZLİ ŞİFRE",
+                label: l10n.secretPassword.toUpperCase(),
                 icon: Icons.vpn_key_outlined,
                 isDark: isDark,
                 isPassword: true,
@@ -108,7 +110,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("GÜVENLİK PROTOKOLÜ:", style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(l10n.securityProtocol.toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
                     Text(strength["label"], style: TextStyle(color: strength["color"], fontSize: 10, fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -146,7 +148,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     elevation: 0,
                   ),
-                  child: const Text("KASAYA KİLİTLE", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  child: Text(l10n.lockToVault.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                 ),
               ),
               const SizedBox(height: 20),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
+import 'package:vaulty/l10n/app_localizations.dart';
 
 class PasswordGeneratorPage extends StatefulWidget {
   const PasswordGeneratorPage({super.key});
@@ -42,6 +43,8 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
@@ -81,11 +84,11 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: _generatedPassword));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Kopyalandı!"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
+                          SnackBar(content: Text(l10n.copied), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
                         );
                       },
                       icon: const Icon(Icons.copy_all_rounded, size: 20),
-                      label: const Text("KOPYALA"),
+                      label: Text(l10n.copyPassword.toUpperCase()),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white.withValues(alpha: 0.1),
                         foregroundColor: Colors.white,
@@ -98,8 +101,8 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
               const SizedBox(height: 40),
               
               // --- AYARLAR BAŞLIĞI ---
-              const Text("GÜVENLİK PARAMETRELERİ", 
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
+              Text(l10n.securityParameters.toUpperCase(), 
+                style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
               const SizedBox(height: 15),
 
               // --- AYARLAR PANELİ ---
@@ -112,7 +115,7 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                 ),
                 child: Column(
                   children: [
-                    _buildOption("Uzunluk: ${_length.toInt()}", 
+                    _buildOption("${l10n.length}: ${_length.toInt()}", 
                       Expanded(
                         child: Slider(
                           value: _length,
@@ -124,9 +127,9 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                       )
                     ),
                     const Divider(color: Colors.white10, indent: 20, endIndent: 20),
-                    _buildOption("Büyük Harf", Switch(value: _hasCapital, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasCapital = val))),
-                    _buildOption("Sayılar", Switch(value: _hasNumbers, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasNumbers = val))),
-                    _buildOption("Semboller", Switch(value: _hasSpecial, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasSpecial = val))),
+                    _buildOption(l10n.includeUppercase, Switch(value: _hasCapital, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasCapital = val))),
+                    _buildOption(l10n.includeNumbers, Switch(value: _hasNumbers, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasNumbers = val))),
+                    _buildOption(l10n.includeSymbols, Switch(value: _hasSpecial, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasSpecial = val))),
                   ],
                 ),
               ),
@@ -143,7 +146,7 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                   elevation: 10,
                   shadowColor: Colors.redAccent.withValues(alpha: 0.4),
                 ),
-                child: const Text("YENİ ŞİFRE OLUŞTUR", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                child: Text(l10n.generatePassword.toUpperCase(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
 
               // 🚀 KRİTİK: Butonu SnakeNavigationBar'ın altından kurtaran boşluk

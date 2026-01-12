@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:vaulty/views/auth/login_screen.dart'; // Giriş ekranına yönlendirme için
+import 'package:vaulty/views/auth/login_screen.dart';
+import 'package:vaulty/l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,9 +15,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // --- SENİN SAĞLAM BACKEND MANTIĞIN ---
   Future<void> registerUser() async {
     setState(() => _isLoading = true);
+    final l10n = AppLocalizations.of(context)!;
 
     try {
       // 1. Kullanıcıyı oluştur
@@ -28,22 +29,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // 2. Doğrulama mailini gönder
       await userCredential.user?.sendEmailVerification();
 
-      // 3. KRİTİK ADIM: Oturumu hemen kapatıyoruz.
-      // Bu sayede onaysız token ile ana sayfaya sızıp hata almasını engelliyoruz.
+      // 3. Oturumu kapat
       await FirebaseAuth.instance.signOut();
 
       if (!mounted) return;
 
       // Kullanıcıya bilgi mesajı göster
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Kayıt başarılı! Lütfen mailini onayla ve giriş yap."),
+        SnackBar(
+          content: Text(l10n.registerSuccess),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 5),
+          duration: const Duration(seconds: 5),
         ),
       );
 
-      // 4. Login ekranına geri uçur (Arkadaki tüm sayfaları temizle)
+      // 4. Login ekranına geri uçur
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -52,10 +52,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     } catch (e) {
       setState(() => _isLoading = false);
+      if (!mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Hata: ${e.toString()}"),
+          content: Text("${l10n.errorPrefix}${e.toString()}"),
           backgroundColor: Colors.red,
         ),
       );
@@ -64,6 +65,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F), // Ultra Dark Tema
       appBar: AppBar(
@@ -101,9 +104,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  "YENİ ERİŞİM",
-                  style: TextStyle(
+                Text(
+                  l10n.newAccess.toUpperCase(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -112,7 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Vaulty Terminaline Kayıt Ol",
+                  l10n.registerTerminalTitle,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
                 ),
 
@@ -121,13 +124,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // --- INPUTLAR (GLASSMORPHISM) ---
                 _buildGlassInput(
                   controller: _emailController,
-                  label: "Email",
+                  label: l10n.email,
                   icon: Icons.alternate_email_rounded,
                 ),
                 const SizedBox(height: 20),
                 _buildGlassInput(
                   controller: _passwordController,
-                  label: "Şifre",
+                  label: l10n.password,
                   icon: Icons.lock_open_rounded,
                   isPassword: true,
                 ),
@@ -161,7 +164,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             width: 25,
                             child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
-                        : const Text("ERİŞİM OLUŞTUR", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                        : Text(l10n.createAccess.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ),
                 ),
                 
@@ -172,12 +175,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: RichText(
                     text: TextSpan(
-                      text: "Zaten hesabın var mı? ",
+                      text: "${l10n.alreadyHaveAccount} ",
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-                      children: const [
+                      children: [
                         TextSpan(
-                          text: "GİRİŞ YAP",
-                          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                          text: l10n.login.toUpperCase(),
+                          style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),

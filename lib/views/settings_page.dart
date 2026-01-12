@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:vaulty/l10n/app_localizations.dart';
 import 'package:vaulty/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vaulty/data/services/export_service.dart';
 import 'package:vaulty/views/auth/login_screen.dart';
 import 'package:vaulty/data/services/auth_service.dart';
+import 'package:vaulty/view_models/locale_view_model.dart';
+
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -12,6 +16,9 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final l10n = AppLocalizations.of(context)!;
+    final localeViewModel = context.watch<LocaleViewModel>();
+
     // Mevcut temanın aydınlık mı karanlık mı olduğunu anlık yakalıyoruz
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     
@@ -50,11 +57,11 @@ class SettingsPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("GÜVENLİ OTURUM", 
-                            style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                          Text(l10n.secureSession.toUpperCase(), 
+                            style: const TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                           const SizedBox(height: 5),
                           Text(
-                            user?.email ?? "Kullanıcı",
+                            user?.email ?? l10n.defaultUser,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: mainTextColor),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -66,8 +73,8 @@ class SettingsPage extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               
-              const Text("TERCİHLER", 
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
+              Text(l10n.preferences.toUpperCase(), 
+                style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
               const SizedBox(height: 15),
 
               // --- AYAR GRUBU ---
@@ -78,7 +85,7 @@ class SettingsPage extends StatelessWidget {
                 _buildSettingsTile(
                   isDark: isDark,
                   icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                  title: "Karanlık Mod",
+                  title: l10n.darkMode,
                   trailing: Switch(
                     value: isDark,
                     activeThumbColor: Colors.redAccent,
@@ -87,8 +94,35 @@ class SettingsPage extends StatelessWidget {
                 ),
                 _buildSettingsTile(
                   isDark: isDark,
+                  icon: Icons.language_rounded,
+                  title: l10n.language,
+                  trailing: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: localeViewModel.locale?.languageCode ?? Localizations.localeOf(context).languageCode,
+                      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? Colors.white54 : Colors.black54),
+                      onChanged: (String? code) {
+                        if (code != null) {
+                          context.read<LocaleViewModel>().setLocale(Locale(code));
+                        }
+                      },
+                      items: [
+                        DropdownMenuItem(
+                          value: 'en', 
+                          child: Text("English", style: TextStyle(color: mainTextColor, fontSize: 14))
+                        ),
+                        DropdownMenuItem(
+                          value: 'tr', 
+                          child: Text("Türkçe", style: TextStyle(color: mainTextColor, fontSize: 14))
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildSettingsTile(
+                  isDark: isDark,
                   icon: Icons.picture_as_pdf_rounded,
-                  title: "Şifreleri PDF Yap",
+                  title: l10n.exportPdf,
                   onTap: () async {
                     if (await AuthService.authenticateUser()) {
                       final snapshot = await FirebaseFirestore.instance
@@ -96,7 +130,7 @@ class SettingsPage extends StatelessWidget {
                       if (snapshot.docs.isNotEmpty) {
                         await ExportService.exportPasswordsToPdf(snapshot.docs);
                       } else {
-                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yedeklenecek şifre yok!")));
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noPasswords)));
                       }
                     }
                   },
@@ -104,7 +138,7 @@ class SettingsPage extends StatelessWidget {
               ]),
 
               const SizedBox(height: 30),
-              const Text("SİSTEM", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
+              Text(l10n.system.toUpperCase(), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
               const SizedBox(height: 15),
 
               _buildSettingsGroup(
@@ -114,13 +148,13 @@ class SettingsPage extends StatelessWidget {
                 _buildSettingsTile(
                   isDark: isDark,
                   icon: Icons.info_outline_rounded,
-                  title: "Vaulty Hakkında",
-                  subtitle: "Versiyon 1.0.0",
+                  title: l10n.about,
+                  subtitle: "${l10n.version} 1.0.0",
                 ),
                 _buildSettingsTile(
                   isDark: isDark,
                   icon: Icons.logout_rounded,
-                  title: "Çıkış Yap",
+                  title: l10n.signOut,
                   titleColor: Colors.orangeAccent,
                   onTap: () async {
                     await FirebaseAuth.instance.signOut();
@@ -130,7 +164,7 @@ class SettingsPage extends StatelessWidget {
               ]),
 
               const SizedBox(height: 50),
-              Center(child: Text("Designed by Vaulty Team", style: TextStyle(color: subTextColor, fontSize: 12))),
+              Center(child: Text(l10n.designedBy, style: TextStyle(color: subTextColor, fontSize: 12))),
             ],
           ),
         ),
