@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:vaulty/data/services/auth_service.dart';
@@ -20,6 +21,14 @@ class PasswordCard extends StatefulWidget {
 }
 
 class _PasswordCardState extends State<PasswordCard> {
+  Timer? _clipboardTimer;
+
+  @override
+  void dispose() {
+    _clipboardTimer?.cancel();
+    super.dispose();
+  }
+
   // --- UI Helpers ---
   Widget getIconForTitle(String title) {
     String t = title.toLowerCase();
@@ -122,8 +131,23 @@ class _PasswordCardState extends State<PasswordCard> {
                       icon: const Icon(Icons.copy_all_rounded, color: Colors.white70),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: decryptedPassword));
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text("Kopyalandı!"), behavior: SnackBarBehavior.floating));
+                        
+                        _clipboardTimer?.cancel();
+                        _clipboardTimer = Timer(const Duration(seconds: 45), () {
+                          Clipboard.setData(const ClipboardData(text: ""));
+                        });
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).clearSnackBars(); // Temiz bir sunum için
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Şifre kopyalandı! Güvenliğiniz için 45 saniye sonra panodan silinecektir."),
+                              behavior: SnackBarBehavior.floating,
+                              duration: Duration(seconds: 4),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
                       },
                     ),
                   ],

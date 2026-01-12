@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -38,15 +39,71 @@ class VaultyApp extends StatefulWidget {
       context.findAncestorStateOfType<VaultyAppState>();
 }
 
-class VaultyAppState extends State<VaultyApp> {
+class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
   ThemeMode _themeMode = ThemeMode.dark;
   bool _isFirstTime = true;
   bool _isLoading = true;
+  Timer? _inactivityTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadInitialData();
+    _resetInactivityTimer();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _inactivityTimer?.cancel();
+    super.dispose();
+  }
+
+  // --- ARKA PLAN / FOREGROUND KONTROLÜ ---
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused) {
+      // Uygulama arka plana atılınca direkt kitle
+      _lockApp(); 
+    }
+  }
+
+  // --- İNAKTİFLİK ZAMANLAYICISI ---
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    // Kullanıcı giriş yapmamışsa sayaç çalışmasın
+    if (FirebaseAuth.instance.currentUser == null) return;
+
+    _inactivityTimer = Timer(const Duration(minutes: 1), () {
+      _lockApp();
+    });
+  }
+
+  void _lockApp() {
+    _inactivityTimer?.cancel();
+    // Eğer zaten login ekranındaysak tekrar açmaya çalışma (mounted kontrolü ile)
+    if (!mounted) return;
+    
+    // Sadece kullanıcı giriş yapmışsa kitleme işlemi yap
+    if (FirebaseAuth.instance.currentUser != null) {
+      // Güvenlik için stack'i temizleyip Login'e at
+      // Not: navigatorKey kullanmıyoruz, bu yüzden context erişimi önemli.
+      // Ancak VaultyApp en tepede olduğu için kendi navigator'ı yok.
+      // Bu yüzden MaterialApp içindeki navigator'a buradan erişemeyiz.
+      // ÇÖZÜM: `GlobalKey<NavigatorState>` kullanmak en temizi olurdu ama
+      // burada mevcut yapıyı bozmadan main.dart içinde _lockApp'i tetikleyemeyiz.
+      // FAKAT: VaultyApp bir StatefulWidget ve build içinde MaterialApp dönüyor.
+      // Lock işlemi aslında bir state değişikliği veya navigation gerektirir.
+      
+      // Basit çözüm: Kullanıcıyı sign-out yapıp UI'ı güncellemek? 
+      // Hayır, sign-out yaparsak biyometrik ile hızlı giriş olmaz, şifre ister.
+      // İstenen: "Navigate to LoginScreen immediately".
+      
+      // Global Navigation Key ekleyelim.
+      navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 
   Future<void> _loadInitialData() async {
@@ -109,28 +166,43 @@ class VaultyAppState extends State<VaultyApp> {
       );
     }
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Vaulty',
-      
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
-        primaryColor: Colors.redAccent,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red, brightness: Brightness.light),
-      ),
+    return Listener(
+      onPointerDown: (_) => _resetInactivityTimer(),
+      onPointerMove: (_) => _resetInactivityTimer(),
+      onPointerUp: (_) => _resetInactivityTimer(),
+      child: MaterialApp(
+        navigatorKey: navigatorKey, // Global Key Eklendi
+        debugShowCheckedModeBanner: false,
+        title: 'Vaulty',
+        
+        theme: ThemeData(
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: Colors.white,
+          primaryColor: Colors.redAccent,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.red, brightness: Brightness.light),
+        ),
 
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F0F0F),
-        primaryColor: Colors.redAccent,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red, brightness: Brightness.dark),
-      ),
+        darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF0F0F0F),
+          primaryColor: Colors.redAccent,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.red, brightness: Brightness.dark),
+        ),
 
-      themeMode: _themeMode,
-      
-      // ARTIK BAŞLANGIÇ NOKTAMIZ SPLASH SCREEN!
-      home: const SplashScreen(), 
+        themeMode: _themeMode,
+        
+        // Rota tanımları ekleyelim ki navigatorKey ile kolayca gidelim
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/home': (context) => const HomePage(),
+        },
+        
+        // ARTIK BAŞLANGIÇ NOKTAMIZ SPLASH SCREEN!
+        home: const SplashScreen(), 
+      ),
     );
   }
 }
+
+// Global Navigator Key tanımladık ki context olmadan navigation yapabilelim
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
