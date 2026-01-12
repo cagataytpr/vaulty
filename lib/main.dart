@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:vaulty/home_page.dart';
-import 'package:vaulty/login_screen.dart';
-import 'package:vaulty/onboarding_screen.dart';
-import 'package:vaulty/splash_screen.dart'; // Yeni ekranı ekledik
+import 'package:provider/provider.dart';
+import 'view_models/home_view_model.dart';
+import 'package:vaulty/views/home/home_page.dart';
+import 'package:vaulty/views/auth/login_screen.dart';
+import 'package:vaulty/views/onboarding_screen.dart';
+import 'package:vaulty/views/splash_screen.dart'; // Yeni ekranı ekledik
 import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,17 +18,24 @@ void main() async {
   // ama gerçek kullanımda kullanıcıyı içeride tutmak için bunu yorum satırına alabilirsin.
   // await FirebaseAuth.instance.signOut(); 
   
-  runApp(const VaultyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => HomeViewModel()),
+      ],
+      child: const VaultyApp(),
+    ),
+  );
 }
 
 class VaultyApp extends StatefulWidget {
   const VaultyApp({super.key});
 
-  static VaultyAppState? of(BuildContext context) =>
-      context.findAncestorStateOfType<VaultyAppState>();
-
   @override
   State<VaultyApp> createState() => VaultyAppState();
+
+  static VaultyAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<VaultyAppState>();
 }
 
 class VaultyAppState extends State<VaultyApp> {

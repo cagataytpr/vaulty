@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home_page.dart';
-import 'registerscreen.dart';
-import 'email_verification_screen.dart';
+import 'package:vaulty/data/services/auth_service.dart';
+import '../home/home_page.dart';
+import 'package:vaulty/views/auth/registerscreen.dart';
+import 'package:vaulty/views/auth/email_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,9 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(
-        email: _emailController.text.trim(),
-      );
+      await AuthService.sendPasswordReset(_emailController.text);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -44,9 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> loginUser() async {
     setState(() => _isLoading = true);
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      UserCredential userCredential = await AuthService.loginWithEmail(
+        _emailController.text,
+        _passwordController.text,
       );
 
       if (!mounted) return;
@@ -97,9 +96,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.1),
+                        color: Colors.amber.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.withOpacity(0.5)),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
                       ),
                       child: const Text("DEV MODE", style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
@@ -118,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.redAccent.withOpacity(0.2),
+                            color: Colors.redAccent.withValues(alpha: 0.2),
                             blurRadius: 50,
                             spreadRadius: 10,
                           ),
@@ -128,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 15),
                     const Text("VAULTY", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4)),
-                    Text("SECURE DATA TERMINAL", style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10, letterSpacing: 2)),
+                    Text("SECURE DATA TERMINAL", style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10, letterSpacing: 2)),
                   ],
                 ),
 
@@ -143,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: resetPassword,
-                    child: Text("Şifremi Unuttum", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                    child: Text("Şifremi Unuttum", style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                   ),
                 ),
 
@@ -154,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
                     boxShadow: [
-                      BoxShadow(color: Colors.redAccent.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 5)),
+                      BoxShadow(color: Colors.redAccent.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 5)),
                     ],
                   ),
                   child: ElevatedButton(
@@ -185,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: RichText(
                     text: TextSpan(
                       text: "Erişimin yok mu? ",
-                      style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
                       children: const [
                         TextSpan(
                           text: "KAYIT OL",
@@ -208,9 +207,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildGlassInput({required TextEditingController controller, required String label, required IconData icon, bool isPassword = false}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: TextField(
         controller: controller,
@@ -218,8 +217,8 @@ class _LoginScreenState extends State<LoginScreen> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-          prefixIcon: Icon(icon, color: Colors.redAccent.withOpacity(0.7)),
+          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+          prefixIcon: Icon(icon, color: Colors.redAccent.withValues(alpha: 0.7)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         ),

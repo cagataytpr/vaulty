@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vaulty/main.dart';
-import 'package:vaulty/login_screen.dart';
+import 'package:vaulty/views/auth/login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -64,9 +64,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Container(
                       padding: const EdgeInsets.all(30),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.05),
+                        color: Colors.redAccent.withValues(alpha: 0.05),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.redAccent.withOpacity(0.1)),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.1)),
                       ),
                       child: Icon(
                         onboardingData[index]['icon'],
@@ -119,7 +119,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         width: _currentPage == index ? 24 : 8,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: _currentPage == index ? Colors.redAccent : Colors.grey.withOpacity(0.3),
+                          color: _currentPage == index ? Colors.redAccent : Colors.grey.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -129,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: () => _controller.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeInOutQuart),
                     icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.redAccent, size: 20),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.redAccent.withOpacity(0.1),
+                      backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
                     ),
                   ),
                 ],
@@ -157,7 +157,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.redAccent.withOpacity(0.2),
+                    color: Colors.redAccent.withValues(alpha: 0.2),
                     blurRadius: 50,
                     spreadRadius: 10,
                   ),
@@ -187,7 +187,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.redAccent.withOpacity(0.3),
+                    color: Colors.redAccent.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),

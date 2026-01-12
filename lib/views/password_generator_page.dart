@@ -124,9 +124,9 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                       )
                     ),
                     const Divider(color: Colors.white10, indent: 20, endIndent: 20),
-                    _buildOption("Büyük Harf", Switch(value: _hasCapital, activeColor: Colors.redAccent, onChanged: (val) => setState(() => _hasCapital = val))),
-                    _buildOption("Sayılar", Switch(value: _hasNumbers, activeColor: Colors.redAccent, onChanged: (val) => setState(() => _hasNumbers = val))),
-                    _buildOption("Semboller", Switch(value: _hasSpecial, activeColor: Colors.redAccent, onChanged: (val) => setState(() => _hasSpecial = val))),
+                    _buildOption("Büyük Harf", Switch(value: _hasCapital, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasCapital = val))),
+                    _buildOption("Sayılar", Switch(value: _hasNumbers, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasNumbers = val))),
+                    _buildOption("Semboller", Switch(value: _hasSpecial, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasSpecial = val))),
                   ],
                 ),
               ),

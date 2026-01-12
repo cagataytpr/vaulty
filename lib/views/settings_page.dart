@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'main.dart';
+import 'package:vaulty/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'export_service.dart';
-import 'login_screen.dart';
+import 'package:vaulty/data/services/export_service.dart';
+import 'package:vaulty/views/auth/login_screen.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -80,7 +80,7 @@ class SettingsPage extends StatelessWidget {
                   title: "Karanlık Mod",
                   trailing: Switch(
                     value: isDark,
-                    activeColor: Colors.redAccent,
+                    activeThumbColor: Colors.redAccent,
                     onChanged: (val) => VaultyApp.of(context)?.changeTheme(val ? ThemeMode.dark : ThemeMode.light),
                   ),
                 ),

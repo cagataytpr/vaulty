@@ -6,6 +6,18 @@ class AuthService {
   static final LocalAuthentication _localAuth = LocalAuthentication();
   static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
+  // --- 0. LOGIN (GENERIC) ---
+  static Future<UserCredential> loginWithEmail(String email, String password) async {
+    return await _firebaseAuth.signInWithEmailAndPassword(
+      email: email.trim(),
+      password: password.trim(),
+    );
+  }
+
+  static Future<void> sendPasswordReset(String email) async {
+    await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
+  }
+
   // --- 1. BİYOMETRİK DOĞRULAMA (Kasa Açılışında) ---
   static Future<bool> authenticate() async {
     try {

@@ -45,6 +45,7 @@ dependencies:
   encrypt: ^5.0.3
   crypto: ^3.0.3
   flutter_snake_navigationbar: 0.6.1
+  provider: ^6.1.5+1
 dev_dependencies:
   flutter_test:
     sdk: flutter

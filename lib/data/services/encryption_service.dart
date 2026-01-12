@@ -15,7 +15,7 @@ class EncryptionService {
 
   // BURASI DEĞİŞTİ: IV'yi rastgele değil, UID'den türetilen sabit bir değer yapıyoruz
   static encrypt_pkg.IV _deriveIV(String userUid) {
-    var bytes = utf8.encode(userUid + "Vaulty_IV_Salt");
+    var bytes = utf8.encode("$userUid" "Vaulty_IV_Salt");
     var digest = sha256.convert(bytes);
     // AES için 16 byte lazım, digest'ın ilk 16 byte'ını alıyoruz
     return encrypt_pkg.IV(Uint8List.fromList(digest.bytes.sublist(0, 16)));
@@ -37,7 +37,7 @@ class EncryptionService {
       final decrypted = encrypter.decrypt64(encryptedPassword, iv: iv);
       return decrypted;
     } catch (e) {
-      print("Decryption Error: $e");
+      // print("Decryption Error: $e");
       return "Hata: Şifre çözülemedi";
     }
   }

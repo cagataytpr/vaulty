@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart'; // Giriş ekranına yönlendirme için
+import 'package:vaulty/views/auth/login_screen.dart'; // Giriş ekranına yönlendirme için
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -91,7 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.redAccent.withOpacity(0.2),
+                          color: Colors.redAccent.withValues(alpha: 0.2),
                           blurRadius: 50,
                           spreadRadius: 5,
                         ),
@@ -113,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 10),
                 Text(
                   "Vaulty Terminaline Kayıt Ol",
-                  style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
                 ),
 
                 const SizedBox(height: 50),
@@ -140,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     borderRadius: BorderRadius.circular(15),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.redAccent.withOpacity(0.3),
+                        color: Colors.redAccent.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 5),
                       ),
@@ -173,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: RichText(
                     text: TextSpan(
                       text: "Zaten hesabın var mı? ",
-                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                       children: const [
                         TextSpan(
                           text: "GİRİŞ YAP",
@@ -201,9 +201,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: TextField(
         controller: controller,
@@ -211,8 +211,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-          prefixIcon: Icon(icon, color: Colors.redAccent.withOpacity(0.7)),
+          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+          prefixIcon: Icon(icon, color: Colors.redAccent.withValues(alpha: 0.7)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         ),
