@@ -107,8 +107,17 @@ class _PasswordCardState extends State<PasswordCard> {
                 child: Row(
                   children: [
                     Expanded(
-                        child: Text(decryptedPassword,
-                            style: const TextStyle(color: Colors.redAccent, fontSize: 24, fontWeight: FontWeight.w600))),
+                        child: Text(
+                          decryptedPassword,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.redAccent, 
+                            fontSize: 24, 
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.copy_all_rounded, color: Colors.white70),
                       onPressed: () {
@@ -151,6 +160,41 @@ class _PasswordCardState extends State<PasswordCard> {
             color: Colors.redAccent.withValues(alpha: 0.6),
             child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
           ),
+          confirmDismiss: (direction) async {
+            // 1. CONFIRMATION DIALOG
+            final bool? shouldDelete = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: const Color(0xFF1E1E1E),
+                title: const Text("Şifreyi Sil?", style: TextStyle(color: Colors.white)),
+                content: const Text(
+                  "Bu işlem geri alınamaz. Bu şifreyi kalıcı olarak silmek istediğine emin misin?",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text("İptal", style: TextStyle(color: Colors.grey)),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text("SİL", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+
+            if (shouldDelete != true) return false;
+
+            // 2. AUTHENTICATION
+            // Dialog kapandıktan sonra biyometrik doğrulama
+            final bool authenticated = await AuthService.authenticateUser();
+
+            // 3. EXECUTION DECISION
+            // Eğer doğrulama başarılıysa true döndür (onDismissed çalışır)
+            // Başarısızsa false döndür (işlem iptal)
+            return authenticated;
+          },
           onDismissed: (_) {
              context.read<HomeViewModel>().deletePassword(widget.password.id);
           },

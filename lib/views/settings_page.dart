@@ -4,6 +4,7 @@ import 'package:vaulty/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vaulty/data/services/export_service.dart';
 import 'package:vaulty/views/auth/login_screen.dart';
+import 'package:vaulty/data/services/auth_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -89,12 +90,14 @@ class SettingsPage extends StatelessWidget {
                   icon: Icons.picture_as_pdf_rounded,
                   title: "Şifreleri PDF Yap",
                   onTap: () async {
-                    final snapshot = await FirebaseFirestore.instance
-                        .collection('users').doc(user?.uid).collection('passwords').get();
-                    if (snapshot.docs.isNotEmpty) {
-                      await ExportService.exportPasswordsToPdf(snapshot.docs);
-                    } else {
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yedeklenecek şifre yok!")));
+                    if (await AuthService.authenticateUser()) {
+                      final snapshot = await FirebaseFirestore.instance
+                          .collection('users').doc(user?.uid).collection('passwords').get();
+                      if (snapshot.docs.isNotEmpty) {
+                        await ExportService.exportPasswordsToPdf(snapshot.docs);
+                      } else {
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Yedeklenecek şifre yok!")));
+                      }
                     }
                   },
                 ),

@@ -39,6 +39,11 @@ class AuthService {
     }
   }
 
+  // Helper alias for clarify or specific use cases requested by user
+  static Future<bool> authenticateUser() async {
+    return await authenticate();
+  }
+
   // --- 2. 2FA: E-POSTA DOĞRULAMA GÖNDERME ---
   static Future<void> sendVerificationEmail() async {
     try {

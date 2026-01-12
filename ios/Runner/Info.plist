@@ -45,7 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>We need biometric authentication to secure your data actions.</string>
 </dict>
-<key>NSFaceIDUsageDescription</key>
-<string>Şifrelerinize erişmek için FaceID kullanmanız gerekmektedir.</string>
 </plist>
