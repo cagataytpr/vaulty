@@ -1,9 +1,50 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart'; // For compute
+import '../../core/constants.dart';
+import '../../data/services/encryption_service.dart';
 import '../data/models/password_model.dart';
 import '../data/repositories/password_repository.dart';
 
+// Class to pass data to the isolate
+class AuditParams {
+  final List<PasswordModel> passwords;
+  final String uid;
+  final String masterKey;
+
+  AuditParams({
+    required this.passwords,
+    required this.uid,
+    required this.masterKey,
+  });
+}
+
+// Top-level function for the isolate
+Future<int> auditPasswords(AuditParams params) async {
+  int weak = 0;
+  Map<String, int> counts = {};
+
+  for (var pass in params.passwords) {
+    try {
+      final decrypted = EncryptionService.decrypt(
+          pass.encryptedPassword, params.uid, params.masterKey);
+      
+      // Only count valid decryptions
+      if (decrypted == "User not logged in" || decrypted.startsWith("Error:") || decrypted.startsWith("Hata:")) {
+           continue;
+      }
+
+      if (decrypted.length < 8) weak++;
+      counts[decrypted] = (counts[decrypted] ?? 0) + 1;
+    } catch (e) {
+      continue;
+    }
+  }
+
+  int reused = counts.values.where((c) => c > 1).length;
+  return weak + reused;
+}
 
 class HomeViewModel extends ChangeNotifier {
   final PasswordRepository _repository = PasswordRepository();
@@ -78,27 +119,29 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  void _performAudit() {
-    int weak = 0;
-    Map<String, int> counts = {};
-
-    for (var pass in _allPasswords) {
-      try {
-        final decrypted = _repository.decryptPassword(pass.encryptedPassword);
-        // Only count valid decryptions
-        if (decrypted == "User not logged in" || decrypted.startsWith("Hata:")) {
-             continue;
-        }
-
-        if (decrypted.length < 8) weak++;
-        counts[decrypted] = (counts[decrypted] ?? 0) + 1;
-      } catch (e) {
-        continue;
-      }
+  Future<void> _performAudit() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || _allPasswords.isEmpty) {
+        _riskCount = 0;
+        notifyListeners();
+        return;
     }
 
-    int reused = counts.values.where((c) => c > 1).length;
-    _riskCount = weak + reused;
+    // Use AppConstants.MASTER_KEY temporarily as requested
+    final params = AuditParams(
+      passwords: List.from(_allPasswords), // Create a copy to be safe
+      uid: user.uid,
+      masterKey: AppConstants.MASTER_KEY, 
+    );
+
+    try {
+      // Run in background isolate
+      _riskCount = await compute(auditPasswords, params);
+    } catch (e) {
+      // debugPrint("Audit failed: $e");
+      _riskCount = 0;
+    }
+    notifyListeners();
   }
 
   Future<void> addNewPassword(String title, String rawPassword) async {

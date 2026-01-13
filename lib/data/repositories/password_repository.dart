@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/constants.dart';
 import '../services/encryption_service.dart';
 import '../models/password_model.dart';
 
@@ -29,7 +30,8 @@ class PasswordRepository {
     final uid = _uid;
     if (uid == null) throw Exception("User not logged in");
 
-    String encryptedText = EncryptionService.encrypt(rawPassword, uid);
+    // Pass Master Key temporarily from constants
+    String encryptedText = EncryptionService.encrypt(rawPassword, uid, AppConstants.MASTER_KEY);
 
     await _firestore.collection('users').doc(uid).collection('passwords').add({
       'title': title,
@@ -53,6 +55,7 @@ class PasswordRepository {
   String decryptPassword(String encrypted) {
     final uid = _uid;
     if (uid == null) return "User not logged in";
-    return EncryptionService.decrypt(encrypted, uid);
+    // Pass Master Key temporarily from constants
+    return EncryptionService.decrypt(encrypted, uid, AppConstants.MASTER_KEY);
   }
 }
