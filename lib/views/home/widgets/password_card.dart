@@ -88,7 +88,7 @@ class _PasswordCardState extends State<PasswordCard> {
       final viewModel = context.read<HomeViewModel>();
       String decryptedPassword;
       try {
-        decryptedPassword = viewModel.decryptPassword(widget.password.encryptedPassword);
+        decryptedPassword = await viewModel.decryptPassword(widget.password.encryptedPassword);
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

@@ -145,62 +145,66 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
-                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2), width: 2),
-                ),
-                child: const Icon(Icons.lock_outline_rounded, size: 50, color: Colors.white),
-              ),
-              const SizedBox(height: 30),
-              
-              Text(AppLocalizations.of(context)!.welcomeBack.toUpperCase(), 
-                style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
-              const SizedBox(height: 10),
-              Text(_currentUser?.email ?? "Kullanıcı", 
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 50),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.05),
+                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2), width: 2),
+                    ),
+                    child: const Icon(Icons.lock_outline_rounded, size: 50, color: Colors.white),
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  Text(AppLocalizations.of(context)!.welcomeBack.toUpperCase(), 
+                    style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                  const SizedBox(height: 10),
+                  Text(_currentUser?.email ?? "Kullanıcı", 
+                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  const SizedBox(height: 50),
 
-              // Unlock Button
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(color: Colors.redAccent.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 5)),
-                    ],
+                  // Unlock Button
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(color: Colors.redAccent.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 5)),
+                        ],
+                      ),
+                    child: ElevatedButton.icon(
+                      onPressed: _unlockWithBiometrics,
+                      icon: const Icon(Icons.fingerprint_rounded, size: 28),
+                      label: Text(AppLocalizations.of(context)!.unlockBiometric.toUpperCase(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                    ),
                   ),
-                child: ElevatedButton.icon(
-                  onPressed: _unlockWithBiometrics,
-                  icon: const Icon(Icons.fingerprint_rounded, size: 28),
-                  label: Text(AppLocalizations.of(context)!.unlockBiometric.toUpperCase(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  ),
-                ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  TextButton(
+                    onPressed: signOut, 
+                    child: Text(AppLocalizations.of(context)!.signOut, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                  )
+                ],
               ),
-              
-              const SizedBox(height: 20),
-              
-              TextButton(
-                onPressed: signOut, 
-                child: Text(AppLocalizations.of(context)!.signOut, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-              )
-            ],
+            ),
           ),
         ),
       ),

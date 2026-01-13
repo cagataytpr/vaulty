@@ -8,11 +8,13 @@ import '../data/repositories/password_repository.dart';
 import '../data/services/auth_service.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
+import 'dart:typed_data'; // For Uint8List
+
 // Class to pass data to the isolate
 class AuditParams {
   final List<PasswordModel> passwords;
   final String uid;
-  final String masterKey;
+  final Uint8List masterKey;
 
   AuditParams({
     required this.passwords,
@@ -21,27 +23,56 @@ class AuditParams {
   });
 }
 
+// Output DTO for the isolate
+class RiskItem {
+  final String title;
+  final String type; // 'WEAK' or 'REUSED'
+
+  RiskItem(this.title, this.type);
+}
+
 // Top-level function for the isolate
-Future<int> auditPasswords(AuditParams params) async {
-  int weak = 0;
+Future<List<RiskItem>> auditPasswords(AuditParams params) async {
+  List<RiskItem> risks = [];
   Map<String, int> counts = {};
 
+  // 1. First Pass: Decrypt and Count
   for (var pass in params.passwords) {
     try {
-      // Updated signature: removed uid
+      // Use SYNC decrypt as we are already in an isolate
       final decrypted = EncryptionService.decrypt(
           pass.encryptedPassword, params.masterKey);
       
-      if (decrypted.length < 8) weak++;
       counts[decrypted] = (counts[decrypted] ?? 0) + 1;
+      
+      if (decrypted.length < 8) {
+        risks.add(RiskItem(pass.title, 'WEAK'));
+      }
     } catch (e) {
-      // Catch DecryptionException or others and skip
       continue;
     }
   }
 
-  int reused = counts.values.where((c) => c > 1).length;
-  return weak + reused;
+  // 2. Second Pass: Check Reused
+  for (var pass in params.passwords) {
+    try {
+       final decrypted = EncryptionService.decrypt(
+          pass.encryptedPassword, params.masterKey);
+       
+       // Avoid duplicates if already flagged as weak? 
+       // Requirement implies listing both if applicable, or just listing risks.
+       // Logic in UI was: list Weak, then list Reused.
+       // We'll mimic that.
+       
+       if ((counts[decrypted] ?? 0) > 1) {
+         risks.add(RiskItem(pass.title, 'REUSED'));
+       }
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return risks;
 }
 
 class HomeViewModel extends ChangeNotifier {
@@ -49,9 +80,11 @@ class HomeViewModel extends ChangeNotifier {
   
   List<PasswordModel> _allPasswords = [];
   List<PasswordModel> _filteredPasswords = [];
+  List<RiskItem> _preCalculatedRisks = []; // Cached results
+
   StreamSubscription<List<PasswordModel>>? _subscription;
   StreamSubscription<User?>? _authSubscription;
-  bool _isLoading = true; // Default to true
+  bool _isLoading = true; 
 
   String _searchQuery = "";
   int _riskCount = 0;
@@ -68,17 +101,16 @@ class HomeViewModel extends ChangeNotifier {
 
   void _listenToAuthChanges() {
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
-      _subscription?.cancel(); // Cancel exiting password stream
-      
+      _subscription?.cancel(); 
       if (user != null) {
-        // User logged in, subscribe to their data
         _isLoading = true;
         notifyListeners();
         _subscribeToPasswords();
       } else {
-        // User logged out
         _allPasswords = [];
         _filteredPasswords = [];
+        _preCalculatedRisks = [];
+        _riskCount = 0;
         _isLoading = false;
         notifyListeners();
       }
@@ -93,9 +125,9 @@ class HomeViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }, onError: (e) {
-      // Handle stream errors (e.g. permission denied on logout)
       _allPasswords = [];
       _filteredPasswords = [];
+      _riskCount = 0;
       _isLoading = false;
       notifyListeners();
     });
@@ -119,28 +151,27 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _performAudit() async {
     final user = FirebaseAuth.instance.currentUser;
-    // Also check session key
     final sessionKey = AuthService.sessionKey;
     
     if (user == null || _allPasswords.isEmpty || sessionKey == null) {
         _riskCount = 0;
+        _preCalculatedRisks = [];
         notifyListeners();
         return;
     }
 
-    // Use actual session key
     final params = AuditParams(
-      passwords: List.from(_allPasswords), // Create a copy to be safe
+      passwords: List.from(_allPasswords), 
       uid: user.uid,
       masterKey: sessionKey, 
     );
 
     try {
-      // Run in background isolate
-      _riskCount = await compute(auditPasswords, params);
+      _preCalculatedRisks = await compute(auditPasswords, params);
+      _riskCount = _preCalculatedRisks.length;
     } catch (e) {
-      // debugPrint("Audit failed: $e");
       _riskCount = 0;
+      _preCalculatedRisks = [];
     }
     notifyListeners();
   }
@@ -151,52 +182,25 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> deletePassword(String id) async {
     await _repository.deletePassword(id);
-    // Stream update will handle UI refresh
   }
 
-  String decryptPassword(String encrypted) {
-    return _repository.decryptPassword(encrypted);
+  Future<String> decryptPassword(String encrypted) async {
+    return await _repository.decryptPassword(encrypted);
   }
 
-  // Calculates security risks and returns a list of localized issues
+  // Returns cache, very fast
   List<Map<String, String>> getSecurityReport(BuildContext context) {
-    // Note: MVVM usually avoids Context, but we use it here for localization as requested.
-    List<Map<String, String>> risks = [];
-    Map<String, int> counts = {};
+    if (_preCalculatedRisks.isEmpty) return [];
+
+    final l10n = AppLocalizations.of(context)!;
     
-    // 1. Decrypt and check weak passwords
-    for (var doc in _allPasswords) {
-       try {
-         String pass = decryptPassword(doc.encryptedPassword);
-         // Check Length < 8
-         if (pass.length < 8) {
-            risks.add({
-              "title": doc.title, 
-              "reason": AppLocalizations.of(context)!.riskWeak
-            });
-         }
-         counts[pass] = (counts[pass] ?? 0) + 1;
-       } catch (e) {
-         continue; // Skip undecryptable
-       }
-    }
-
-    // 2. Check reused passwords
-    for (var doc in _allPasswords) {
-       try {
-         String pass = decryptPassword(doc.encryptedPassword);
-         if ((counts[pass] ?? 0) > 1) {
-           risks.add({
-             "title": doc.title, 
-             "reason": AppLocalizations.of(context)!.riskReused
-           });
-         }
-       } catch (e) {
-         continue;
-       }
-    }
-
-    return risks;
+    return _preCalculatedRisks.map((item) {
+      String reason = item.type == 'WEAK' ? l10n.riskWeak : l10n.riskReused;
+      return {
+        "title": item.title,
+        "reason": reason,
+      };
+    }).toList();
   }
 
   @override

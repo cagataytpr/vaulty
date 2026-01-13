@@ -69,8 +69,9 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused) {
-      // Uygulama arka plana atılınca direkt kitle
+    
+    // Only lock if we are NOT currently showing biometric dialog (flag check)
+    if (state == AppLifecycleState.paused && !AuthService.isAuthenticating) {
       _lockApp(); 
     }
   }
@@ -90,12 +91,15 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
     _inactivityTimer?.cancel();
     if (!mounted) return;
     
-    // Sadece kullanıcı giriş yapmışsa kitleme işlemi yap
-    if (FirebaseAuth.instance.currentUser != null) {
-      // Clear Session Key from memory
-      AuthService.clearSession();
+    // 1. Zaten kilitliysek işlem yapma
+    if (AuthService.sessionKey == null) return;
 
-      // Navigate to Login immediately
+    // 2. KRİTİK KORUMA: Eğer şu an Biyometrik/PIN giriliyorsa KİLİTLEME!
+    // Bu satır olmazsa Timer parmak izi ekranını kapatır.
+    if (AuthService.isAuthenticating) return;
+
+    if (FirebaseAuth.instance.currentUser != null) {
+      AuthService.clearSession();
       AuthService.navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }

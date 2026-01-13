@@ -34,7 +34,8 @@ class PasswordRepository {
     final sessionKey = AuthService.sessionKey;
     if (sessionKey == null) throw Exception("Session expired. Please Re-login.");
 
-    String encryptedText = EncryptionService.encrypt(rawPassword, sessionKey);
+    // Use Async Encryption (Isolate)
+    String encryptedText = await EncryptionService.encryptAsync(rawPassword, sessionKey);
 
     await _firestore.collection('users').doc(uid).collection('passwords').add({
       'title': title,
@@ -55,10 +56,11 @@ class PasswordRepository {
         .delete();
   }
 
-  String decryptPassword(String encrypted) {
+  Future<String> decryptPassword(String encrypted) async {
     final sessionKey = AuthService.sessionKey;
     if (sessionKey == null) throw DecryptionException("Session expired");
     
-    return EncryptionService.decrypt(encrypted, sessionKey);
+    // Use Async Decryption (Isolate)
+    return await EncryptionService.decryptAsync(encrypted, sessionKey);
   }
 }
