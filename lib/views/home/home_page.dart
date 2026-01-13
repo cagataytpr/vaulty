@@ -166,32 +166,8 @@ class _VaultListBodyState extends State<VaultListBody> {
     // To show the *details*, we might need to iterate again or add `getRisks()` to VM.
     // Let's iterate here for now using `decryptPassword`.
     
-    List<Map<String, String>> risks = [];
-    Map<String, int> counts = {};
-    
-    // Since we need to show details, we access all passwords
-    final docs = viewModel.allPasswordsRaw;
-
-    for (var doc in docs) {
-       try {
-         String pass = viewModel.decryptPassword(doc.encryptedPassword);
-         if (pass.length < 8) risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskWeak});
-         counts[pass] = (counts[pass] ?? 0) + 1;
-       } catch (e) {
-         continue;
-       }
-    }
-
-    for (var doc in docs) {
-       try {
-         String pass = viewModel.decryptPassword(doc.encryptedPassword);
-         if ((counts[pass] ?? 0) > 1) {
-           risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskReused});
-         }
-       } catch (e) {
-         continue;
-       }
-    }
+    // Use ViewModel to get the report
+    final risks = viewModel.getSecurityReport(context);
 
     showModalBottomSheet(
       context: context,

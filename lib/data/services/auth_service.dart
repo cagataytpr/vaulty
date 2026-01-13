@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:developer';
+import 'dart:convert'; // For utf8
+import 'dart:typed_data'; // For Uint8List
 import 'package:firebase_auth/firebase_auth.dart';
 import 'secure_storage_service.dart';
 
@@ -11,16 +13,24 @@ class AuthService {
   static final SecureStorageService _secureStorage = SecureStorageService();
 
   // --- Session Management ---
-  // In-memory decrypted Master Key
-  static String? _sessionKey;
+  // In-memory decrypted Master Key (Stored as bytes for secure wiping)
+  static Uint8List? _sessionKey;
 
-  static String? get sessionKey => _sessionKey;
+  // Accessor returns String for compatibility with EncryptionService
+  // Note: This creates a temporary String copy in memory.
+  static String? get sessionKey => _sessionKey != null ? utf8.decode(_sessionKey!) : null;
 
-  static void setSessionKey(String key) {
+  static void setSessionKey(Uint8List key) {
     _sessionKey = key;
   }
 
   static void clearSession() {
+    if (_sessionKey != null) {
+      // Secure Wipe: Overwrite bytes with zeros
+      for (int i = 0; i < _sessionKey!.length; i++) {
+        _sessionKey![i] = 0;
+      }
+    }
     _sessionKey = null;
   }
 
@@ -34,10 +44,8 @@ class AuthService {
 
   // --- Login with Password (sets session) ---
   static Future<void> loginWithPassword(String password) async {
-    // For now, we trust the password provided is correct if it unlocks/decrypts successfully later.
-    // In a real app, we might verify a hash here or try to decrypt a test token.
-    // Setting session key:
-    setSessionKey(password);
+    // Convert String password to bytes immediately
+    setSessionKey(Uint8List.fromList(utf8.encode(password)));
   }
 
   // --- Login with Biometrics (retrieves session) ---
@@ -52,7 +60,7 @@ class AuthService {
       String? masterKey = await _secureStorage.getMasterKey();
 
       if (masterKey != null) {
-        setSessionKey(masterKey);
+        setSessionKey(Uint8List.fromList(utf8.encode(masterKey)));
         return true;
       } else {
         // No key stored, fallback to password
@@ -66,14 +74,15 @@ class AuthService {
 
   // --- Enable Biometrics (saves current session) ---
   static Future<bool> enableBiometrics() async {
-    if (_sessionKey == null) return false;
+    if (sessionKey == null) return false;
 
     try {
       if (!await authenticate(localizedReason: 'Biyometrik girişi aktifleştirmek için doğrulama yapın')) {
         return false;
       }
       
-      await _secureStorage.storeMasterKey(_sessionKey!);
+      // sessionKey getter returns String, which is what storeMasterKey expects
+      await _secureStorage.storeMasterKey(sessionKey!);
       return true;
     } catch (e) {
       log("Enable biometrics failed: $e");

@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:flutter/material.dart'; // For Context
 import 'package:flutter/foundation.dart'; // For compute
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/services/encryption_service.dart';
 import '../data/models/password_model.dart';
 import '../data/repositories/password_repository.dart';
 import '../data/services/auth_service.dart';
+import 'package:vaulty/l10n/app_localizations.dart';
 
 // Class to pass data to the isolate
 class AuditParams {
@@ -154,6 +156,47 @@ class HomeViewModel extends ChangeNotifier {
 
   String decryptPassword(String encrypted) {
     return _repository.decryptPassword(encrypted);
+  }
+
+  // Calculates security risks and returns a list of localized issues
+  List<Map<String, String>> getSecurityReport(BuildContext context) {
+    // Note: MVVM usually avoids Context, but we use it here for localization as requested.
+    List<Map<String, String>> risks = [];
+    Map<String, int> counts = {};
+    
+    // 1. Decrypt and check weak passwords
+    for (var doc in _allPasswords) {
+       try {
+         String pass = decryptPassword(doc.encryptedPassword);
+         // Check Length < 8
+         if (pass.length < 8) {
+            risks.add({
+              "title": doc.title, 
+              "reason": AppLocalizations.of(context)!.riskWeak
+            });
+         }
+         counts[pass] = (counts[pass] ?? 0) + 1;
+       } catch (e) {
+         continue; // Skip undecryptable
+       }
+    }
+
+    // 2. Check reused passwords
+    for (var doc in _allPasswords) {
+       try {
+         String pass = decryptPassword(doc.encryptedPassword);
+         if ((counts[pass] ?? 0) > 1) {
+           risks.add({
+             "title": doc.title, 
+             "reason": AppLocalizations.of(context)!.riskReused
+           });
+         }
+       } catch (e) {
+         continue;
+       }
+    }
+
+    return risks;
   }
 
   @override

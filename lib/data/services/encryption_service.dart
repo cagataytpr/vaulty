@@ -7,7 +7,7 @@ import 'package:pointycastle/export.dart';
 import '../../core/exceptions.dart';
 
 class EncryptionService {
-  static const int _pbkdf2Iterations = 10000;
+  static const int _pbkdf2Iterations = 200000;
   static const int _keyLength = 32; // 256 bits
 
   /// Generates a random salt of [length] bytes.
