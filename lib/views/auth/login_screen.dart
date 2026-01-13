@@ -80,6 +80,9 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
+        // Set Session Key (In-Memory)
+        await AuthService.loginWithPassword(_passwordController.text);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
@@ -100,8 +103,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _unlockWithBiometrics() async {
-    final l10n = AppLocalizations.of(context)!;
-    bool authenticated = await AuthService.authenticateUser(localizedReason: l10n.biometricReason);
+    bool authenticated = await AuthService.loginWithBiometrics();
+    
     if (authenticated) {
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -128,6 +131,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     if (_currentUser != null) {
+      // If user is logged in (Firebase) but defined genericly or locked
+      // We check if session is active? 
+      // Actually per logic requested: session key is memory only. 
+      // If app restarts, _sessionKey is null, but Firebase user is persistent.
+      // So we show "Locked Mode" (Biometric Unlock Screen)
       return _buildLockedMode();
     }
     return _buildLoginMode();

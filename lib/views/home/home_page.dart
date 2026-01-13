@@ -173,27 +173,23 @@ class _VaultListBodyState extends State<VaultListBody> {
     final docs = viewModel.allPasswordsRaw;
 
     for (var doc in docs) {
-       String pass = viewModel.decryptPassword(doc.encryptedPassword);
-       // Skip errors
-       if(pass.startsWith("User not logged in") || pass.startsWith("Hata:")) continue;
-       
-       if (pass.length < 8) risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskWeak});
-       counts[pass] = (counts[pass] ?? 0) + 1;
+       try {
+         String pass = viewModel.decryptPassword(doc.encryptedPassword);
+         if (pass.length < 8) risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskWeak});
+         counts[pass] = (counts[pass] ?? 0) + 1;
+       } catch (e) {
+         continue;
+       }
     }
 
     for (var doc in docs) {
-       String pass = viewModel.decryptPassword(doc.encryptedPassword);
-       if ((counts[pass] ?? 0) > 1) {
-         // Avoid duplicates in the risk list if we want, or just list them all
-         // The original code listed them if count > 1.
-         // But checking if we already added it for "short" reason?
-         // Original code: Add if short. Separately add if duplicate. 
-         // So a short duplicate appears twice? Let's keep original behavior.
-         
-         // We only add 'duplicate' warning if it's not already added? 
-         // Original code loop 1: add short. loop 2: add duplicate. 
-         // So yes, it can appear twice.
-          risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskReused});
+       try {
+         String pass = viewModel.decryptPassword(doc.encryptedPassword);
+         if ((counts[pass] ?? 0) > 1) {
+           risks.add({"title": doc.title, "reason": AppLocalizations.of(context)!.riskReused});
+         }
+       } catch (e) {
+         continue;
        }
     }
 

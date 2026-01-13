@@ -1,10 +1,28 @@
+import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'secure_storage_service.dart';
 
 class AuthService {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   static final LocalAuthentication _localAuth = LocalAuthentication();
   static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  static final SecureStorageService _secureStorage = SecureStorageService();
+
+  // --- Session Management ---
+  // In-memory decrypted Master Key
+  static String? _sessionKey;
+
+  static String? get sessionKey => _sessionKey;
+
+  static void setSessionKey(String key) {
+    _sessionKey = key;
+  }
+
+  static void clearSession() {
+    _sessionKey = null;
+  }
 
   // --- 0. LOGIN (GENERIC) ---
   static Future<UserCredential> loginWithEmail(String email, String password) async {
@@ -14,11 +32,60 @@ class AuthService {
     );
   }
 
+  // --- Login with Password (sets session) ---
+  static Future<void> loginWithPassword(String password) async {
+    // For now, we trust the password provided is correct if it unlocks/decrypts successfully later.
+    // In a real app, we might verify a hash here or try to decrypt a test token.
+    // Setting session key:
+    setSessionKey(password);
+  }
+
+  // --- Login with Biometrics (retrieves session) ---
+  static Future<bool> loginWithBiometrics() async {
+    try {
+      // 1. Check if biometrics available
+      if (!await authenticate(localizedReason: 'Giriş yapmak için kimliğinizi doğrulayın')) {
+        return false;
+      }
+
+      // 2. Try to get Master Key from Secure Storage
+      String? masterKey = await _secureStorage.getMasterKey();
+
+      if (masterKey != null) {
+        setSessionKey(masterKey);
+        return true;
+      } else {
+        // No key stored, fallback to password
+        return false;
+      }
+    } catch (e) {
+      log("Biometric login failed: $e");
+      return false;
+    }
+  }
+
+  // --- Enable Biometrics (saves current session) ---
+  static Future<bool> enableBiometrics() async {
+    if (_sessionKey == null) return false;
+
+    try {
+      if (!await authenticate(localizedReason: 'Biyometrik girişi aktifleştirmek için doğrulama yapın')) {
+        return false;
+      }
+      
+      await _secureStorage.storeMasterKey(_sessionKey!);
+      return true;
+    } catch (e) {
+      log("Enable biometrics failed: $e");
+      return false;
+    }
+  }
+
   static Future<void> sendPasswordReset(String email) async {
     await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
   }
 
-  // --- 1. BİYOMETRİK DOĞRULAMA (Kasa Açılışında) ---
+  // --- 1. BIOMETRIC AUTHENTICATION (Low Level) ---
   static Future<bool> authenticate({String? localizedReason}) async {
     try {
       final bool canCheck = await _localAuth.canCheckBiometrics;
@@ -39,12 +106,12 @@ class AuthService {
     }
   }
 
-  // Helper alias for clarify or specific use cases requested by user
+  // Helper alias
   static Future<bool> authenticateUser({String? localizedReason}) async {
     return await authenticate(localizedReason: localizedReason);
   }
 
-  // --- 2. 2FA: E-POSTA DOĞRULAMA GÖNDERME ---
+  // --- 2. 2FA: EMAIL VERIFICATION ---
   static Future<void> sendVerificationEmail() async {
     try {
       User? user = _firebaseAuth.currentUser;
@@ -57,19 +124,19 @@ class AuthService {
     }
   }
 
-  // --- 3. 2FA: DOĞRULAMA DURUMUNU KONTROL ET ---
+  // --- 3. 2FA: CHECK STATUS ---
   static Future<bool> isEmailVerified() async {
     User? user = _firebaseAuth.currentUser;
     if (user != null) {
-      // Firebase'den güncel veriyi çekmek için reload şart
       await user.reload();
       return _firebaseAuth.currentUser!.emailVerified;
     }
     return false;
   }
 
-  // --- 4. ÇIKIŞ YAPMA ---
+  // --- 4. SIGN OUT ---
   static Future<void> signOut() async {
+    clearSession();
     await _firebaseAuth.signOut();
   }
 }

@@ -86,7 +86,16 @@ class _PasswordCardState extends State<PasswordCard> {
       if (!context.mounted) return;
       
       final viewModel = context.read<HomeViewModel>();
-      final decryptedPassword = viewModel.decryptPassword(widget.password.encryptedPassword);
+      String decryptedPassword;
+      try {
+        decryptedPassword = viewModel.decryptPassword(widget.password.encryptedPassword);
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text("Error: Decryption failed. Old format?"), backgroundColor: Colors.red),
+        );
+        return;
+      }
 
       if (!context.mounted) return;
 

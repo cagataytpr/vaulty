@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:vaulty/views/auth/login_screen.dart';
+import 'package:vaulty/views/home/home_page.dart';
+import 'package:vaulty/data/services/auth_service.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -43,24 +44,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // 2. Doğrulama mailini gönder
       await userCredential.user?.sendEmailVerification();
 
-      // 3. Oturumu kapat
-      await FirebaseAuth.instance.signOut();
+      // 3. Otomatik Giriş (Session Key Set)
+      // "Strict Verification" için çıkış yapıyorduk ama kullanıcı "immediately logged in" istediği için
+      // burada oturumu açık tutuyoruz ve session key'i set ediyoruz.
+      await AuthService.loginWithPassword(_passwordController.text.trim());
 
       if (!mounted) return;
 
       // Kullanıcıya bilgi mesajı göster
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.registerSuccess),
+          content: Text(l10n.registerSuccess), // "Kayıt başarılı, maili onayla" diyebilir ama içeri girdi.
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 5),
         ),
       );
 
-      // 4. Login ekranına geri uçur
+      // 4. Home ekranına uçur
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
         (route) => false,
       );
 

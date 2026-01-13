@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'; // For compute
-import '../../core/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/services/encryption_service.dart';
 import '../data/models/password_model.dart';
 import '../data/repositories/password_repository.dart';
+import '../data/services/auth_service.dart';
 
 // Class to pass data to the isolate
 class AuditParams {
@@ -27,17 +26,14 @@ Future<int> auditPasswords(AuditParams params) async {
 
   for (var pass in params.passwords) {
     try {
+      // Updated signature: removed uid
       final decrypted = EncryptionService.decrypt(
-          pass.encryptedPassword, params.uid, params.masterKey);
+          pass.encryptedPassword, params.masterKey);
       
-      // Only count valid decryptions
-      if (decrypted == "User not logged in" || decrypted.startsWith("Error:") || decrypted.startsWith("Hata:")) {
-           continue;
-      }
-
       if (decrypted.length < 8) weak++;
       counts[decrypted] = (counts[decrypted] ?? 0) + 1;
     } catch (e) {
+      // Catch DecryptionException or others and skip
       continue;
     }
   }
@@ -121,17 +117,20 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _performAudit() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null || _allPasswords.isEmpty) {
+    // Also check session key
+    final sessionKey = AuthService.sessionKey;
+    
+    if (user == null || _allPasswords.isEmpty || sessionKey == null) {
         _riskCount = 0;
         notifyListeners();
         return;
     }
 
-    // Use AppConstants.MASTER_KEY temporarily as requested
+    // Use actual session key
     final params = AuditParams(
       passwords: List.from(_allPasswords), // Create a copy to be safe
       uid: user.uid,
-      masterKey: AppConstants.MASTER_KEY, 
+      masterKey: sessionKey, 
     );
 
     try {

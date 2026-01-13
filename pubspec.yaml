@@ -50,6 +50,8 @@ dependencies:
   flutter_snake_navigationbar: 0.6.1
   provider: ^6.1.5+1
   flutter_gen: ^5.12.0
+  flutter_secure_storage: ^9.0.0
+  pointycastle: ^3.7.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

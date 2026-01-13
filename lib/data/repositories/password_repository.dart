@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../core/constants.dart';
 import '../services/encryption_service.dart';
+import '../services/auth_service.dart';
 import '../models/password_model.dart';
+import '../../core/exceptions.dart';
 
 class PasswordRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,9 +30,11 @@ class PasswordRepository {
   Future<void> addPassword(String title, String rawPassword) async {
     final uid = _uid;
     if (uid == null) throw Exception("User not logged in");
+    
+    final sessionKey = AuthService.sessionKey;
+    if (sessionKey == null) throw Exception("Session expired. Please Re-login.");
 
-    // Pass Master Key temporarily from constants
-    String encryptedText = EncryptionService.encrypt(rawPassword, uid, AppConstants.MASTER_KEY);
+    String encryptedText = EncryptionService.encrypt(rawPassword, sessionKey);
 
     await _firestore.collection('users').doc(uid).collection('passwords').add({
       'title': title,
@@ -53,9 +56,9 @@ class PasswordRepository {
   }
 
   String decryptPassword(String encrypted) {
-    final uid = _uid;
-    if (uid == null) return "User not logged in";
-    // Pass Master Key temporarily from constants
-    return EncryptionService.decrypt(encrypted, uid, AppConstants.MASTER_KEY);
+    final sessionKey = AuthService.sessionKey;
+    if (sessionKey == null) throw DecryptionException("Session expired");
+    
+    return EncryptionService.decrypt(encrypted, sessionKey);
   }
 }

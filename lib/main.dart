@@ -10,7 +10,8 @@ import 'view_models/locale_view_model.dart';
 import 'package:vaulty/views/home/home_page.dart';
 import 'package:vaulty/views/auth/login_screen.dart';
 import 'package:vaulty/views/onboarding_screen.dart';
-import 'package:vaulty/views/splash_screen.dart'; // Yeni ekranı ekledik
+import 'package:vaulty/views/splash_screen.dart'; 
+import 'package:vaulty/data/services/auth_service.dart';
 import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -87,26 +88,15 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
 
   void _lockApp() {
     _inactivityTimer?.cancel();
-    // Eğer zaten login ekranındaysak tekrar açmaya çalışma (mounted kontrolü ile)
     if (!mounted) return;
     
     // Sadece kullanıcı giriş yapmışsa kitleme işlemi yap
     if (FirebaseAuth.instance.currentUser != null) {
-      // Güvenlik için stack'i temizleyip Login'e at
-      // Not: navigatorKey kullanmıyoruz, bu yüzden context erişimi önemli.
-      // Ancak VaultyApp en tepede olduğu için kendi navigator'ı yok.
-      // Bu yüzden MaterialApp içindeki navigator'a buradan erişemeyiz.
-      // ÇÖZÜM: `GlobalKey<NavigatorState>` kullanmak en temizi olurdu ama
-      // burada mevcut yapıyı bozmadan main.dart içinde _lockApp'i tetikleyemeyiz.
-      // FAKAT: VaultyApp bir StatefulWidget ve build içinde MaterialApp dönüyor.
-      // Lock işlemi aslında bir state değişikliği veya navigation gerektirir.
-      
-      // Basit çözüm: Kullanıcıyı sign-out yapıp UI'ı güncellemek? 
-      // Hayır, sign-out yaparsak biyometrik ile hızlı giriş olmaz, şifre ister.
-      // İstenen: "Navigate to LoginScreen immediately".
-      
-      // Global Navigation Key ekleyelim.
-      navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+      // Clear Session Key from memory
+      AuthService.clearSession();
+
+      // Navigate to Login immediately
+      AuthService.navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }
 
@@ -178,7 +168,7 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
       onPointerMove: (_) => _resetInactivityTimer(),
       onPointerUp: (_) => _resetInactivityTimer(),
       child: MaterialApp(
-        navigatorKey: navigatorKey, // Global Key Eklendi
+        navigatorKey: AuthService.navigatorKey, 
         debugShowCheckedModeBanner: false,
         title: 'Vaulty',
 
@@ -227,5 +217,3 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
   }
 }
 
-// Global Navigator Key tanımladık ki context olmadan navigation yapabilelim
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

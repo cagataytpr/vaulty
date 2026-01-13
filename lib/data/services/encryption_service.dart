@@ -1,66 +1,82 @@
-import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
+
+import 'package:encrypt/encrypt.dart' as encrypt_pkg;
+import 'package:pointycastle/export.dart';
+import '../../core/exceptions.dart';
 
 class EncryptionService {
+  static const int _pbkdf2Iterations = 10000;
+  static const int _keyLength = 32; // 256 bits
 
-  static encrypt_pkg.Key _deriveKey(String userUid, String masterKey) {
-    var bytes = utf8.encode(masterKey + userUid);
-    var digest = sha256.convert(bytes);
-    return encrypt_pkg.Key(Uint8List.fromList(digest.bytes));
+  /// Generates a random salt of [length] bytes.
+  static Uint8List _generateRandomBytes(int length) {
+    final rnd = Random.secure();
+    final bytes = Uint8List(length);
+    for (var i = 0; i < length; i++) {
+      bytes[i] = rnd.nextInt(256);
+    }
+    return bytes;
   }
 
-  // Legacy IV derivation (for backward compatibility)
-  static encrypt_pkg.IV _deriveLegacyIV(String userUid) {
-    var bytes = utf8.encode("$userUid" "Vaulty_IV_Salt");
-    var digest = sha256.convert(bytes);
-    return encrypt_pkg.IV(Uint8List.fromList(digest.bytes.sublist(0, 16)));
+  /// Derives a key from [password] and [salt] using PBKDF2.
+  static Uint8List _deriveKey(String password, Uint8List salt) {
+    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
+      ..init(Pbkdf2Parameters(salt, _pbkdf2Iterations, _keyLength));
+
+    return pbkdf2.process(utf8.encode(password));
   }
 
-  static String encrypt(String password, String userUid, String masterKey) {
+  /// Encrypts [data] using [masterPassword].
+  /// Returns format: `Salt:IV:Cipher` (all Base64 encoded).
+  static String encrypt(String data, String masterPassword) {
     try {
-      final key = _deriveKey(userUid, masterKey);
-      
-      // 1. Generate Random IV (16 bytes)
+      // 1. Generate Random Salt (16 bytes)
+      final salt = _generateRandomBytes(16);
+
+      // 2. Derive Key using PBKDF2
+      final keyBytes = _deriveKey(masterPassword, salt);
+      final key = encrypt_pkg.Key(keyBytes);
+
+      // 3. Generate Random IV (16 bytes)
       final iv = encrypt_pkg.IV.fromLength(16);
-      
+
+      // 4. Encrypt
       final encrypter = encrypt_pkg.Encrypter(encrypt_pkg.AES(key));
-      final encrypted = encrypter.encrypt(password, iv: iv);
-      
-      // 2. Return format: IV:EncryptedData
-      return "${iv.base64}:${encrypted.base64}";
+      final encrypted = encrypter.encrypt(data, iv: iv);
+
+      // 5. Return Encoded Format
+      final saltBase64 = base64.encode(salt);
+      return "$saltBase64:${iv.base64}:${encrypted.base64}";
     } catch (e) {
       throw Exception("Encryption failed: $e");
     }
   }
 
-  static String decrypt(String encryptedData, String userUid, String masterKey) {
+  /// Decrypts [encryptedData] using [masterPassword].
+  /// Expects format: `Salt:IV:Cipher`.
+  static String decrypt(String encryptedData, String masterPassword) {
     try {
-      final key = _deriveKey(userUid, masterKey);
-      final encrypter = encrypt_pkg.Encrypter(encrypt_pkg.AES(key));
-
-      // 3. Check format
-      if (encryptedData.contains(':')) {
-        // New Format: IV:Cipher
-        final parts = encryptedData.split(':');
-        if (parts.length != 2) throw Exception("Invalid encrypted data format");
-        
-        final iv = encrypt_pkg.IV.fromBase64(parts[0]);
-        final cipherText = parts[1];
-        
-        return encrypter.decrypt64(cipherText, iv: iv);
-      } else {
-        // Legacy Format: Static IV
-        // Fallback for existing passwords
-        final iv = _deriveLegacyIV(userUid);
-        return encrypter.decrypt64(encryptedData, iv: iv);
+      final parts = encryptedData.split(':');
+      if (parts.length != 3) {
+        throw DecryptionException("Invalid encrypted data format. Expected Salt:IV:Cipher.");
       }
+
+      final salt = base64.decode(parts[0]);
+      final iv = encrypt_pkg.IV.fromBase64(parts[1]);
+      final cipherText = parts[2];
+
+      // 1. Re-derive Key using extracted Salt
+      final keyBytes = _deriveKey(masterPassword, salt);
+      final key = encrypt_pkg.Key(keyBytes);
+
+      // 2. Decrypt
+      final encrypter = encrypt_pkg.Encrypter(encrypt_pkg.AES(key));
+      return encrypter.decrypt64(cipherText, iv: iv);
     } catch (e) {
-      // log("Decryption Error: $e"); 
-      // Return a clean error or rethrow depending on app policy. 
-      // For now returning generic error text that UI might handle or display.
-      return "Error: Decryption failed"; 
+      if (e is DecryptionException) rethrow;
+      throw DecryptionException("Decryption failed", e);
     }
   }
 }
