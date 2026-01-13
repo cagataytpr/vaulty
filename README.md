@@ -1,4 +1,4 @@
-# 🛡️ Vaulty - Secure Password Manager
+# 🛡️ Vaulty - Personal Password Manager Project
 
 <div align="center">
 
@@ -6,69 +6,68 @@
 ![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-%23FFCA28?logo=firebase)
 ![Dart](https://img.shields.io/badge/Dart-3.0-%230175C2?logo=dart)
 
-**Next-Gen Security, Minimalist Design, Absolute Control.**
+**A robust mobile security research project focusing on Encryption, Clean Architecture, and Performance.**
 
 </div>
 
-## 🚀 Introduction
+---
 
-**Vaulty** is a robust, cross-platform password management solution developed with **Flutter**. It is designed to provide a secure and seamless experience for storing credentials, generating strong passwords, and analyzing account security.
+> 🎓 **About This Project:**
+> This application was developed as a **technical research project** to explore advanced mobile security standards and Flutter architecture patterns. While it implements industry-standard AES encryption, its primary goal is to demonstrate **Clean Architecture (MVVM)**, **Secure Storage practices**, and **Background Isolates** in a realistic scenario.
 
-This project was conceived and developed by a **Junior Mobile Developer** as a comprehensive research initiative. The primary goal was to explore advanced mobile security standards, implement **Clean Architecture (MVVM)**, and master the integration of biometric authentication systems in a production-ready environment.
+---
 
-Every line of code in Vaulty is the result of deep research into encryption algorithms (AES), state management patterns (Provider), and secure data handling practices.
+## 💡 Motivation
 
-## ✨ Key Features
+As a Mobile Developer, I wanted to go beyond simple UI apps and tackle the challenges of handling sensitive user data securely. Vaulty is the result of my deep dive into:
+* **Cryptography:** How to properly implement AES-256 with randomized Initialization Vectors (IV).
+* **Performance:** How to handle heavy computations without freezing the UI.
+* **Architecture:** How to structure a scalable app using MVVM and Provider.
 
-### 🔒 Uncompromising Security
-* **AES-256 Encryption:** All passwords are encrypted locally before being transmitted to the cloud, ensuring that even the database administrators cannot access user data.
-* **Biometric Authentication:** Integrated Fingerprint and FaceID support for quick and secure access (`local_auth`).
-* **Strict Verification:** Access to the vault is strictly blocked for users with unverified email addresses to prevent unauthorized account creation.
-* **Auto-Lock Mechanism:** The app automatically locks itself after 1 minute of inactivity or when moved to the background, requiring biometric re-authentication.
-* **Clipboard Security:** Copied passwords are automatically cleared from the clipboard after 45 seconds to prevent accidental leaks.
+## 🛠️ Technical Highlights
 
-### 🛠️ Functionality & Tools
-* **Password Generator:** Built-in tool to generate cryptographically strong passwords with customizable length and character sets.
-* **Security Analysis Report:** Real-time auditing of stored passwords to identify weak or reused credentials, providing users with actionable security insights.
-* **PDF Export:** Securely export all credentials to a PDF file for offline backup, protected by biometric confirmation.
-* **Localization (l10n):** Full multi-language support (English & Turkish) utilizing Flutter's official localization package.
+### 🔒 Security Implementation
+Instead of relying on basic storage, I implemented a custom encryption layer:
+* **AES-256 Encryption:** Used `encrypt` package with custom logic.
+* **Randomized IVs:** Each password is encrypted with a unique, randomly generated Initialization Vector (IV) to prevent pattern analysis attacks.
+* **Biometric Auth:** Integrated `local_auth` for Fingerprint/FaceID verification before accessing the vault.
+* **Auto-Lock:** Implemented `WidgetsBindingObserver` to detect when the app goes to the background and lock the session immediately.
 
-## 🏗️ Architecture
+### ⚡ Performance Optimization (Isolates)
+Decrypting hundreds of passwords to analyze security risks (reused/weak passwords) is CPU-intensive.
+* **Problem:** Running this on the main thread caused UI "jank" (freezing).
+* **Solution:** I moved the audit logic to a separate thread using Flutter's **`compute` (Isolate)** function. This keeps the UI running at 60 FPS while heavy calculations happen in the background.
 
-The project follows the **MVVM (Model-View-ViewModel)** architectural pattern to ensure separation of concerns, testability, and scalability.
-
-* **Core:** Contains shared resources, constants, and utilities.
-* **Data Layer:** Handles data sources (Firestore), repositories, and services (Auth, Encryption).
-    * *Repository Pattern:* `PasswordRepository` acts as a single source of truth, abstracting data fetching and encryption logic.
-* **View Models:** `HomeViewModel` and `LocaleViewModel` manage the UI state and business logic, decoupling the UI from data operations.
-* **Views:** UI components and screens that react to state changes provided by ViewModels.
+### 🏗️ Architecture (MVVM)
+I followed strict separation of concerns to make the code testable and readable:
+* **Data Layer:** Repositories (`PasswordRepository`) and Services (`EncryptionService`, `AuthService`).
+* **ViewModel Layer:** `HomeViewModel` manages state and business logic, decoupling the UI from data operations.
+* **View Layer:** Dumb widgets that only react to state changes.
 
 ## 📦 Tech Stack
 
 * **Framework:** Flutter & Dart
-* **Backend:** Firebase (Authentication, Cloud Firestore)
+* **Backend:** Firebase (Auth & Firestore)
 * **State Management:** Provider
-* **Security:**
-    * `encrypt`: For AES encryption.
-    * `local_auth`: For biometric verification.
-    * `flutter_windowmanager`: For preventing screenshots (Android).
-* **Utilities:**
-    * `pdf`: For generating backup documents.
-    * `shared_preferences`: For persisting local settings (Theme, Language).
-    * `flutter_localizations`: For internationalization.
+* **Key Packages:**
+    * `encrypt`: Cryptography.
+    * `local_auth`: Biometrics.
+    * `flutter_windowmanager`: Prevent screenshots (Android).
+    * `shared_preferences`: Local settings.
+    * `flutter_localizations`: Multi-language support.
 
 ## 📸 Screenshots
 
-| Login Screen | Vault (Home) | Generator | Settings |
-|:---:|:---:|:---:|:---:|
-| *(Coming Soon)* | *(Coming Soon)* | *(Coming Soon)* | *(Coming Soon)* |
+| Login & Auth | Secure Vault | Security Analysis |
+|:---:|:---:|:---:|
+| *(Coming Soon)* | *(Coming Soon)* | *(Coming Soon)* |
 
 ## 🏁 Getting Started
 
 ### Prerequisites
-* Flutter SDK (v3.10.3 or higher)
-* Dart SDK (v3.0 or higher)
-* Firebase Project Setup (GoogleService-Info.plist / google-services.json)
+* Flutter SDK (v3.10.3+)
+* Dart SDK (v3.0+)
+* Firebase Project (google-services.json required)
 
 ### Installation
 
@@ -80,28 +79,23 @@ The project follows the **MVVM (Model-View-ViewModel)** architectural pattern to
     ```bash
     flutter pub get
     ```
-3.  **Generate localization files:**
-    ```bash
-    flutter gen-l10n
-    ```
-4.  **Run the application:**
+3.  **Run the application:**
     ```bash
     flutter run
     ```
 
-## 🔮 Future Roadmap
+## 🔮 Future Improvements (Roadmap)
 
-* [ ] **Cloud Sync Conflict Resolution:** Improved handling for multi-device synchronization.
-* [ ] **Cross-Platform Desktop Support:** Extending biometric support to Windows and macOS builds.
-* [ ] **Password Breach Detection:** Integration with "Have I Been Pwned" API.
-* [ ] **Unit & Widget Tests:** Increasing test coverage for critical business logic.
+To make this app production-ready, I plan to implement:
+* [ ] **Master Password Derivation:** Generating encryption keys from a user input using PBKDF2/Argon2 (currently using a simpler key exchange for demonstration).
+* [ ] **Unit Testing:** Adding comprehensive tests for the Encryption Service and ViewModels.
+* [ ] **Cross-Platform:** Extending biometric support to iOS and Desktop.
 
 ---
 
 <div align="center">
 
-**Developed with ❤️ and ☕ by Çağatay Tupur**
-
-*Open to feedback and collaboration opportunities.*
+**Developed by Çağatay Tupur**
+*Passionate about building secure and performant mobile apps.*
 
 </div>
