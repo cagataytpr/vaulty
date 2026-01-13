@@ -193,6 +193,9 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
         supportedLocales: const [
           Locale('en'), // English
           Locale('tr'), // Turkish
+          Locale('de'), // German
+          Locale('es'), // Spanish
+          Locale('fr'), // French
         ],
         
         theme: ThemeData(

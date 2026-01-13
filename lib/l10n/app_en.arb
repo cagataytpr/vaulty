@@ -101,5 +101,6 @@
     "cancelAndLogout": "Cancel and Log Out",
 
     "designedBy": "Designed by Vaulty Team",
-    "defaultUser": "User"
+    "defaultUser": "User",
+    "passwordConstraintError": "Password must be at least 8 characters long and include uppercase, lowercase, number, and symbol."
 }

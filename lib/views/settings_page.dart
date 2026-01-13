@@ -109,11 +109,23 @@ class SettingsPage extends StatelessWidget {
                       items: [
                         DropdownMenuItem(
                           value: 'en', 
-                          child: Text("English", style: TextStyle(color: mainTextColor, fontSize: 14))
+                          child: Text("🇺🇸 English", style: TextStyle(color: mainTextColor, fontSize: 14))
                         ),
                         DropdownMenuItem(
                           value: 'tr', 
-                          child: Text("Türkçe", style: TextStyle(color: mainTextColor, fontSize: 14))
+                          child: Text("🇹🇷 Türkçe", style: TextStyle(color: mainTextColor, fontSize: 14))
+                        ),
+                        DropdownMenuItem(
+                          value: 'de', 
+                          child: Text("🇩🇪 Deutsch", style: TextStyle(color: mainTextColor, fontSize: 14))
+                        ),
+                        DropdownMenuItem(
+                          value: 'es', 
+                          child: Text("🇪🇸 Español", style: TextStyle(color: mainTextColor, fontSize: 14))
+                        ),
+                        DropdownMenuItem(
+                          value: 'fr', 
+                          child: Text("🇫🇷 Français", style: TextStyle(color: mainTextColor, fontSize: 14))
                         ),
                       ],
                     ),

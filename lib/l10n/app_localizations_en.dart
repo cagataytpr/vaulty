@@ -277,4 +277,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get defaultUser => 'User';
+
+  @override
+  String get passwordConstraintError =>
+      'Password must be at least 8 characters long and include uppercase, lowercase, number, and symbol.';
 }

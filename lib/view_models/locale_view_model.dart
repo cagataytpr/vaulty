@@ -20,7 +20,7 @@ class LocaleViewModel extends ChangeNotifier {
   }
 
   Future<void> setLocale(Locale locale) async {
-    if (!['en', 'tr'].contains(locale.languageCode)) return;
+    if (!['en', 'tr', 'de', 'es', 'fr'].contains(locale.languageCode)) return;
     
     _locale = locale;
     notifyListeners();

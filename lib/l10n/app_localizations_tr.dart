@@ -282,4 +282,8 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get defaultUser => 'Kullanıcı';
+
+  @override
+  String get passwordConstraintError =>
+      'Şifre en az 8 karakter olmalı; büyük harf, küçük harf, rakam ve sembol içermelidir.';
 }
