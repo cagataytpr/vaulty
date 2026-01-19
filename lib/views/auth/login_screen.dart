@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLockedMode() {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -160,7 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white.withValues(alpha: 0.05),
                       border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2), width: 2),
                     ),
-                    child: const Icon(Icons.lock_outline_rounded, size: 50, color: Colors.white),
+                    child: Icon(Icons.lock_outline_rounded, size: 50, color: Theme.of(context).colorScheme.onSurface),
                   ),
                   const SizedBox(height: 30),
                   
@@ -168,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
                   const SizedBox(height: 10),
                   Text(_currentUser?.email ?? "Kullanıcı", 
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   
@@ -200,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   TextButton(
                     onPressed: signOut, 
-                    child: Text(AppLocalizations.of(context)!.signOut, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                    child: Text(AppLocalizations.of(context)!.signOut, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
                   )
                 ],
               ),
@@ -214,8 +214,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLoginMode() {
     final l10n = AppLocalizations.of(context)!;
 
+    // final isDark = Theme.of(context).brightness == Brightness.dark; // Unused
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -245,8 +247,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                     ),
                     const SizedBox(height: 15),
-                    Text(l10n.appTitle.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4)),
-                    Text("SECURE DATA TERMINAL", style: TextStyle(color: Colors.white.withValues(alpha:0.4), fontSize: 10, letterSpacing: 2)),
+                    Text(l10n.appTitle.toUpperCase(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4)),
+                    Text("SECURE DATA TERMINAL", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.4), fontSize: 10, letterSpacing: 2)),
                   ],
                 ),
 
@@ -271,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: resetPassword,
-                    child: Text(l10n.forgotPassword, style: const TextStyle(color: Colors.white70)),
+                    child: Text(l10n.forgotPassword, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
                   ),
                 ),
 
@@ -318,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: RichText(
                     text: TextSpan(
                       text: "${l10n.dontHaveAccount} ",
-                      style: TextStyle(color: Colors.white.withValues(alpha:0.5)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.5)),
                       children: [
                         TextSpan(
                           text: l10n.register.toUpperCase(),
@@ -339,19 +341,25 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildGlassInput({required TextEditingController controller, required String label, required IconData icon, bool isPassword = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final glassColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1);
+    final textColor = isDark ? Colors.white : Colors.black;
+    final hintColor = isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: glassColor,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: borderColor),
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: textColor),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+          labelStyle: TextStyle(color: hintColor),
           prefixIcon: Icon(icon, color: Colors.redAccent.withValues(alpha: 0.7)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),

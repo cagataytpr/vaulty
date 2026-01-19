@@ -48,7 +48,12 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final containerColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05);
+    final borderColor = isDark ? Colors.redAccent.withValues(alpha: 0.3) : Colors.redAccent.withValues(alpha: 0.3); // Keep red accent
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
@@ -63,9 +68,9 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
               Container(
                 padding: const EdgeInsets.all(30),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: containerColor,
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                  border: Border.all(color: borderColor),
                   boxShadow: [
                     BoxShadow(color: Colors.redAccent.withValues(alpha: 0.05), blurRadius: 20, spreadRadius: 2),
                   ],
@@ -94,8 +99,8 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                       icon: const Icon(Icons.copy_all_rounded, size: 20),
                       label: Text(l10n.copyPassword.toUpperCase()),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        foregroundColor: Colors.white,
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                        foregroundColor: textColor,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       ),
                     )
@@ -106,16 +111,16 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
               
               // --- AYARLAR BAŞLIĞI ---
               Text(l10n.securityParameters.toUpperCase(), 
-                style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
+                style: TextStyle(color: textColor.withValues(alpha: 0.6), fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 12)),
               const SizedBox(height: 15),
 
               // --- AYARLAR PANELİ ---
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.03),
+                  color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   children: [
@@ -125,15 +130,15 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                           value: _length,
                           min: 8, max: 32,
                           activeColor: Colors.redAccent,
-                          inactiveColor: Colors.white10,
+                          inactiveColor: isDark ? Colors.white10 : Colors.black12,
                           onChanged: (val) => setState(() => _length = val),
                         ),
                       )
                     ),
-                    const Divider(color: Colors.white10, indent: 20, endIndent: 20),
-                    _buildOption(l10n.includeUppercase, Switch(value: _hasCapital, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasCapital = val))),
-                    _buildOption(l10n.includeNumbers, Switch(value: _hasNumbers, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasNumbers = val))),
-                    _buildOption(l10n.includeSymbols, Switch(value: _hasSpecial, activeThumbColor: Colors.redAccent, onChanged: (val) => setState(() => _hasSpecial = val))),
+                    Divider(color: isDark ? Colors.white10 : Colors.black12, indent: 20, endIndent: 20),
+                    _buildOption(l10n.includeUppercase, Switch(value: _hasCapital, activeThumbColor: Colors.redAccent, trackColor: WidgetStateProperty.all(isDark ? Colors.white10 : Colors.black12), onChanged: (val) => setState(() => _hasCapital = val))),
+                    _buildOption(l10n.includeNumbers, Switch(value: _hasNumbers, activeThumbColor: Colors.redAccent, trackColor: WidgetStateProperty.all(isDark ? Colors.white10 : Colors.black12), onChanged: (val) => setState(() => _hasNumbers = val))),
+                    _buildOption(l10n.includeSymbols, Switch(value: _hasSpecial, activeThumbColor: Colors.redAccent, trackColor: WidgetStateProperty.all(isDark ? Colors.white10 : Colors.black12), onChanged: (val) => setState(() => _hasSpecial = val))),
                   ],
                 ),
               ),
@@ -167,7 +172,7 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
       child: Row(
         children: [
-          SizedBox(width: 100, child: Text(title, style: const TextStyle(fontSize: 15, color: Colors.white70))),
+          SizedBox(width: 100, child: Text(title, style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)))),
           control,
         ],
       ),
