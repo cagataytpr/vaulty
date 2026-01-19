@@ -29,7 +29,7 @@ class _PasswordCardState extends State<PasswordCard> {
     super.dispose();
   }
 
-  // --- UI Helpers ---
+  // --- Arayüz Yardımcıları ---
   Widget getIconForTitle(String title) {
     String t = title.toLowerCase();
     IconData iconData;
@@ -92,7 +92,7 @@ class _PasswordCardState extends State<PasswordCard> {
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text("Error: Decryption failed. Old format?"), backgroundColor: Colors.red),
+           const SnackBar(content: Text("Hata: Şifre çözülemedi."), backgroundColor: Colors.red),
         );
         return;
       }
@@ -136,29 +136,30 @@ class _PasswordCardState extends State<PasswordCard> {
                           ),
                         ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.copy_all_rounded, color: Colors.white70),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: decryptedPassword));
-                        
-                        _clipboardTimer?.cancel();
-                        _clipboardTimer = Timer(const Duration(seconds: 45), () {
-                          Clipboard.setData(const ClipboardData(text: ""));
-                        });
+                      IconButton(
+                        icon: const Icon(Icons.copy_all_rounded, color: Colors.white70),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: decryptedPassword));
+                          
+                          _clipboardTimer?.cancel();
+                          // Güvenlik gereği panoyu temizle
+                          _clipboardTimer = Timer(const Duration(seconds: 45), () {
+                            Clipboard.setData(const ClipboardData(text: ""));
+                          });
 
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).clearSnackBars(); // Temiz bir sunum için
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Şifre kopyalandı! Güvenliğiniz için 45 saniye sonra panodan silinecektir."),
-                              behavior: SnackBarBehavior.floating,
-                              duration: Duration(seconds: 4),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).clearSnackBars(); 
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Şifre kopyalandı! Güvenliğiniz için 45 saniye sonra panodan silinecektir."),
+                                behavior: SnackBarBehavior.floating,
+                                duration: Duration(seconds: 4),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -171,9 +172,7 @@ class _PasswordCardState extends State<PasswordCard> {
 
   @override
   Widget build(BuildContext context) {
-    // If animation is provided, wrap in Fade/Transition. Otherwise just return container.
-    // However, Parent usually handles the animation builder.
-    // For specific animation passed from list:
+    // Animasyon varsa geçiş efekti ile sarmala
     
     Widget content = Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -194,7 +193,7 @@ class _PasswordCardState extends State<PasswordCard> {
             child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
           ),
           confirmDismiss: (direction) async {
-            // 1. CONFIRMATION DIALOG
+            // 1. ONAY PENCERESİ
             final bool? shouldDelete = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
@@ -219,13 +218,12 @@ class _PasswordCardState extends State<PasswordCard> {
 
             if (shouldDelete != true) return false;
 
-            // 2. AUTHENTICATION
+            // 2. KİMLİK DOĞRULAMA
             // Dialog kapandıktan sonra biyometrik doğrulama
             final bool authenticated = await AuthService.authenticateUser();
 
-            // 3. EXECUTION DECISION
+            // 3. İŞLEM KARARI
             // Eğer doğrulama başarılıysa true döndür (onDismissed çalışır)
-            // Başarısızsa false döndür (işlem iptal)
             return authenticated;
           },
           onDismissed: (_) {

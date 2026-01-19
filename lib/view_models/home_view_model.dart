@@ -10,7 +10,7 @@ import 'package:vaulty/l10n/app_localizations.dart';
 
 import 'dart:typed_data'; // For Uint8List
 
-// Class to pass data to the isolate
+/// Isolate işlemine veri aktarmak için kullanılan DTO sınıfı.
 class AuditParams {
   final List<PasswordModel> passwords;
   final String uid;
@@ -23,23 +23,23 @@ class AuditParams {
   });
 }
 
-// Output DTO for the isolate
+/// Isolate sonucunda dönen risk parametresi.
 class RiskItem {
   final String title;
-  final String type; // 'WEAK' or 'REUSED'
+  final String type; // 'WEAK' (Zayıf) veya 'REUSED' (Tekrar Eden)
 
   RiskItem(this.title, this.type);
 }
 
-// Top-level function for the isolate
+/// Şifreleri analiz eden ve güvenlik risklerini belirleyen Isolate fonksiyonu.
 Future<List<RiskItem>> auditPasswords(AuditParams params) async {
   List<RiskItem> risks = [];
   Map<String, int> counts = {};
 
-  // 1. First Pass: Decrypt and Count
+  // 1. Aşama: Şifreleri Çöz ve Analiz Et
   for (var pass in params.passwords) {
     try {
-      // Use SYNC decrypt as we are already in an isolate
+      // Isolate içinde olduğumuz için senkron decrypt kullanabiliriz
       final decrypted = EncryptionService.decrypt(
           pass.encryptedPassword, params.masterKey);
       
@@ -53,16 +53,11 @@ Future<List<RiskItem>> auditPasswords(AuditParams params) async {
     }
   }
 
-  // 2. Second Pass: Check Reused
+  // 2. Aşama: Tekrar Eden Şifreleri Kontrol Et
   for (var pass in params.passwords) {
     try {
        final decrypted = EncryptionService.decrypt(
           pass.encryptedPassword, params.masterKey);
-       
-       // Avoid duplicates if already flagged as weak? 
-       // Requirement implies listing both if applicable, or just listing risks.
-       // Logic in UI was: list Weak, then list Reused.
-       // We'll mimic that.
        
        if ((counts[decrypted] ?? 0) > 1) {
          risks.add(RiskItem(pass.title, 'REUSED'));
@@ -149,6 +144,7 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  /// Şifreleri arka planda analiz ederek güvenlik raporu oluşturur.
   Future<void> _performAudit() async {
     final user = FirebaseAuth.instance.currentUser;
     final sessionKey = AuthService.sessionKey;
@@ -188,7 +184,8 @@ class HomeViewModel extends ChangeNotifier {
     return await _repository.decryptPassword(encrypted);
   }
 
-  // Returns cache, very fast
+  /// Hesaplanmış güvenlik risklerini döndürür.
+  /// Sonuç önbellekten geldiği için hızlı çalışır.
   List<Map<String, String>> getSecurityReport(BuildContext context) {
     if (_preCalculatedRisks.isEmpty) return [];
 

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // For PlatformException
+import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:developer';
-import 'dart:convert'; // For utf8
-import 'dart:typed_data'; // For Uint8List
-import 'package:flutter/foundation.dart'; // For compute
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'secure_storage_service.dart';
 import 'encryption_service.dart';
@@ -15,19 +14,22 @@ class AuthService {
   static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   static final SecureStorageService _secureStorage = SecureStorageService();
   
-  // Constant App Salt for Derive-Once
+  /// Anahtar türetme işlemi için kullanılan sabit uygulama tuzu (salt).
   static final Uint8List _appSalt = Uint8List.fromList(utf8.encode('Vaulty_Static_Salt_v1'));
 
-  // --- Session Management ---
-  // In-memory Derived Key (Ready for AES)
+  // --- Oturum Yönetimi ---
+  /// Bellekte tutulan türetilmiş anahtar (AES işlemlerine hazır).
   static Uint8List? _sessionKey;
 
   static Uint8List? get sessionKey => _sessionKey;
 
+  /// Oturum anahtarını manuel olarak ayarlar.
   static void setSessionKey(Uint8List key) {
     _sessionKey = key;
   }
 
+  /// Aktif oturum anahtarını bellekten güvenli bir şekilde siler.
+  /// Bellek alanını sıfırlayarak (zero-fill) güvenliği artırır.
   static void clearSession() {
     if (_sessionKey != null) {
       for (int i = 0; i < _sessionKey!.length; i++) {
@@ -37,7 +39,7 @@ class AuthService {
     _sessionKey = null;
   }
 
-  // --- 0. LOGIN (GENERIC) ---
+  /// Kullanıcının e-posta ve şifre ile Firebase üzerinden giriş yapmasını sağlar.
   static Future<UserCredential> loginWithEmail(String email, String password) async {
     return await _firebaseAuth.signInWithEmailAndPassword(
       email: email.trim(),
@@ -45,16 +47,18 @@ class AuthService {
     );
   }
 
-  // --- Login with Password (sets session) ---
+  /// Master şifre ile giriş yapar ve şifreleme anahtarını türetir.
+  /// 
+  /// Bu işlem sonucunda [_sessionKey] hesaplanır ve [SecureStorageService] üzerine kaydedilir.
+  /// Bu kayıt işlemi, daha sonraki biyometrik girişler için kritiktir.
   static Future<void> loginWithPassword(String password) async {
-    // 1. Anahtarı türet
+    // 1. Anahtarı arka planda türet
     _sessionKey = await compute(_deriveKeyTask, {
       'password': password,
       'salt': _appSalt,
     });
 
-    // 2. KAYDET: Anahtarı Secure Storage'a yaz.
-    // Bunu yapmazsak Biyometrik giriş çalışmaz.
+    // 2. Anahtarı güvenli depolama alanına kaydet
     if (_sessionKey != null) {
       try {
         await _secureStorage.storeMasterKey(base64.encode(_sessionKey!));
@@ -64,7 +68,9 @@ class AuthService {
     }
   }
 
-  // --- Login with Biometrics (retrieves session) ---
+  /// Biyometrik doğrulama ile giriş yapar ve saklanan anahtarı çözer.
+  /// 
+  /// Başarılı olursa [true] döner ve [_sessionKey] set edilir.
   static Future<bool> loginWithBiometrics() async {
     try {
       if (!await authenticate(localizedReason: 'Giriş yapmak için kimliğinizi doğrulayın')) {
@@ -74,8 +80,7 @@ class AuthService {
       String? encodedKey = await _secureStorage.getMasterKey();
 
       if (encodedKey != null) {
-        // The stored key is expected to be the DERIVED key (base64 encoded)
-        // If coming from old version, this might break, but user accepted invalidation.
+        // Saklanan anahtar derive edilmiş haldedir (base64)
         setSessionKey(base64.decode(encodedKey));
         return true;
       } else {
@@ -87,7 +92,7 @@ class AuthService {
     }
   }
 
-  // --- Enable Biometrics (saves current session) ---
+  /// Mevcut oturum anahtarını kullanarak biyometrik girişi aktifleştirir.
   static Future<bool> enableBiometrics() async {
     if (sessionKey == null) return false;
 
@@ -96,7 +101,7 @@ class AuthService {
         return false;
       }
       
-      // Store the derived key as base64 string
+      // Türetilmiş anahtarı base64 string olarak sakla
       await _secureStorage.storeMasterKey(base64.encode(sessionKey!));
       return true;
     } catch (e) {
@@ -109,36 +114,36 @@ class AuthService {
     await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
   }
 
-
-
-  // Flag to prevent app locking during biometric dialog
+  /// Biyometrik penceresi açıkken uygulamanın kilitlenmesini önleyen bayrak.
   static bool isAuthenticating = false;
 
-  // --- 1. BIOMETRIC AUTHENTICATION (Low Level) ---
+  /// Cihazın biyometrik donanımını kullanarak kullanıcıyı doğrular.
+  /// 
+  /// [localizedReason] parametresi ile kullanıcıya gösterilecek mesaj belirlenir.
   static Future<bool> authenticate({String? localizedReason}) async {
-    // 1. Double-click prevention
+    // 1. Çift tıklamayı ve üst üste çağırmayı önle
     if (isAuthenticating) return false;
 
     try {
-      // 2. RAISE THE FLAG: Tell main.dart "Don't lock me!"
+      // 2. Bayrağı kaldır: Kilit ekranı devreye girmemeli
       isAuthenticating = true;
 
-      // Check hardware support - keeps fail-fast behavior
+      // Donanım desteğini kontrol et
       final bool canCheck = await _localAuth.canCheckBiometrics;
       final bool isSupported = await _localAuth.isDeviceSupported();
 
       if (!canCheck && !isSupported) return false;
 
-      // 3. Stop previous auth to be safe
+      // 3. Önceki işlemi durdur
       await _localAuth.stopAuthentication();
 
-      // 4. Authenticate
+      // 4. Doğrulama işlemini başlat
       return await _localAuth.authenticate(
         localizedReason: localizedReason ?? 'Şifrelerinize erişmek için lütfen kimliğinizi doğrulayın',
         options: const AuthenticationOptions(
-          stickyAuth: false, // Critical: Prevent stale sessions
+          stickyAuth: false, // Bayat oturumları önle
           biometricOnly: false,
-          useErrorDialogs: true, // Critical: Show native errors
+          useErrorDialogs: true, // Native hata pencerelerini göster
         ),
       );
     } on PlatformException catch (e) {
@@ -151,7 +156,7 @@ class AuthService {
       log("Biyometrik hata: $e");
       return false;
     } finally {
-      // 5. LOWER THE FLAG: Reset state no matter what happens
+      // 5. Bayrağı indir: İşlem bitti, durum sıfırlandı
       isAuthenticating = false;
     }
   }
@@ -160,12 +165,12 @@ class AuthService {
     await _localAuth.stopAuthentication();
   }
 
-  // Helper alias
+  /// Kullanıcıyı doğrulamak için yardımcı metot.
   static Future<bool> authenticateUser({String? localizedReason}) async {
     return await authenticate(localizedReason: localizedReason);
   }
 
-  // --- 2. 2FA: EMAIL VERIFICATION ---
+  /// Kullanıcıya e-posta doğrulama linki gönderir.
   static Future<void> sendVerificationEmail() async {
     try {
       User? user = _firebaseAuth.currentUser;
@@ -178,7 +183,7 @@ class AuthService {
     }
   }
 
-  // --- 3. 2FA: CHECK STATUS ---
+  /// Kullanıcının e-posta adresini doğrulayıp doğrulamadığını kontrol eder.
   static Future<bool> isEmailVerified() async {
     User? user = _firebaseAuth.currentUser;
     if (user != null) {
@@ -188,14 +193,14 @@ class AuthService {
     return false;
   }
 
-  // --- 4. SIGN OUT ---
+  /// Oturumu kapatır ve bellekten hassas verileri temizler.
   static Future<void> signOut() async {
     clearSession();
     await _firebaseAuth.signOut();
   }
 }
 
-// Top-level task for key derivation
+// Anahtar türetme işlemi için arka planda (Isolate) çalışacak görev fonksiyonu
 Uint8List _deriveKeyTask(Map<String, dynamic> params) {
   return EncryptionService.deriveKey(params['password'] as String, params['salt'] as Uint8List);
 }

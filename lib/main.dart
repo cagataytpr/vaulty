@@ -19,8 +19,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseAuth.instance.signOut();
-  // Test aşamasında her açılışta çıkış yapmak istersen bu kalsın, 
-  // ama gerçek kullanımda kullanıcıyı içeride tutmak için bunu yorum satırına alabilirsin.
+  // Geliştirme notu: `signOut`, test sırasında başlangıç durumunu resetlemek için kullanılıyor.
+  // Prodüksiyonda bu satır kaldırılmalı veya yorum satırına alınmalıdır.
   // await FirebaseAuth.instance.signOut(); 
   
   runApp(
@@ -65,12 +65,12 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // --- ARKA PLAN / FOREGROUND KONTROLÜ ---
+  // --- Arka Plan / Ön Plan Kontrolü ---
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     
-    // Only lock if we are NOT currently showing biometric dialog (flag check)
+    // Sadece biyometrik doğrulama ekranı kapalıysa kilitleme yap
     if (state == AppLifecycleState.paused && !AuthService.isAuthenticating) {
       _lockApp(); 
     }
@@ -87,15 +87,16 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
     });
   }
 
+  /// Uygulamayı kilitler ve giriş ekranına yönlendirir.
   void _lockApp() {
     _inactivityTimer?.cancel();
     if (!mounted) return;
     
-    // 1. Zaten kilitliysek işlem yapma
+    // 1. Oturum zaten kapalıysa işlem yapma
     if (AuthService.sessionKey == null) return;
 
-    // 2. KRİTİK KORUMA: Eğer şu an Biyometrik/PIN giriliyorsa KİLİTLEME!
-    // Bu satır olmazsa Timer parmak izi ekranını kapatır.
+    // 2. KRİTİK: Eğer biyometrik doğrulama (PIN/Parmak izi) ekranı açıksa kilitleme yapma.
+    // Aksi takdirde OS penceresi yüzünden uygulama 'Paused' durumuna düşüp kendini kapatır.
     if (AuthService.isAuthenticating) return;
 
     if (FirebaseAuth.instance.currentUser != null) {
@@ -134,29 +135,30 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
     });
   }
 
-  // --- KRİTİK FONKSİYON: SplashScreen'den sonra nereye gidilecek? ---
+  // --- Yönlendirme Kontrolü ---
+  /// Splash ekranından sonra hangi sayfaya gidileceğine karar verir.
   Widget getNextScreen() {
-    // 1. Eğer uygulama ilk kez açılıyorsa Onboarding'e gönder
+    // 1. İlk defa açılıyorsa Tanıtım Ekranına (Onboarding) git
     if (_isFirstTime) {
       return const OnboardingScreen();
     }
     
-    // 2. Kullanıcı giriş yapmış mı ve maili onaylı mı kontrol et
+    // 2. Kullanıcı giriş yapmış ve e-postası onaylıysa Ana Sayfaya git
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && user.emailVerified) {
       return const HomePage();
     }
     
-    // 3. Hiçbiri değilse Login'e gönder
+    // 3. Aksi halde Giriş Ekranına yönlendir
     return const LoginScreen();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watch locale changes
+    // Lokalizasyon değişimlerini izle
     final localeViewModel = context.watch<LocaleViewModel>();
 
-    // Veriler yüklenirken siyah bir ekran yerine SplashScreen mantığına uygun bekleme yapıyoruz
+    // Veri yükleme aşamasında kullanıcıyı beklet
     if (_isLoading) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -176,8 +178,8 @@ class VaultyAppState extends State<VaultyApp> with WidgetsBindingObserver {
         debugShowCheckedModeBanner: false,
         title: 'Vaulty',
 
-        // Localization Config
-        locale: localeViewModel.locale, // Bind locale to ViewModel
+        // Lokalizasyon Konfigürasyonu
+        locale: localeViewModel.locale, // Dili ViewModel'e bağla
         localizationsDelegates: [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,

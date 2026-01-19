@@ -16,12 +16,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // --- 0. Şifre Kuralları Kontrolü ---
+  // Şifre: En az 1 Büyük harf, 1 Küçük harf, 1 Rakam, 1 Özel karakter ve 8 karakter uzunluğunda olmalı.
   Future<void> registerUser() async {
     setState(() => _isLoading = true);
     final l10n = AppLocalizations.of(context)!;
-
+    
     try {
-      // 0. Şifre Kuralları Kontrolü
+      // RegEx kuralını kontrol et
       final passwordRegex = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$');
       if (!passwordRegex.hasMatch(_passwordController.text)) {
         setState(() => _isLoading = false);
@@ -35,32 +37,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      // 1. Kullanıcıyı oluştur
+      // 1. Kullanıcıyı Firebase Auth üzerinde oluşturur
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // 2. Doğrulama mailini gönder
+      // 2. Doğrulama e-postasını gönder
       await userCredential.user?.sendEmailVerification();
 
-      // 3. Otomatik Giriş (Session Key Set)
-      // "Strict Verification" için çıkış yapıyorduk ama kullanıcı "immediately logged in" istediği için
-      // burada oturumu açık tutuyoruz ve session key'i set ediyoruz.
+      // 3. Otomatik Giriş ve Oturum Anahtarının Ayarlanması
+      // Kullanıcı deneyimini iyileştirmek için kayıt sonrası doğrudan oturum açılır 
+      // ve şifreleme anahtarı (session key) oluşturulur.
       await AuthService.loginWithPassword(_passwordController.text.trim());
 
       if (!mounted) return;
 
-      // Kullanıcıya bilgi mesajı göster
+      // Kullanıcıya başarılı işlem mesajı göster
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.registerSuccess), // "Kayıt başarılı, maili onayla" diyebilir ama içeri girdi.
+          content: Text(l10n.registerSuccess),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 5),
         ),
       );
 
-      // 4. Home ekranına uçur
+      // 4. Ana sayfaya yönlendir ve geçmişi temizle
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
@@ -138,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 50),
 
-                // --- INPUTLAR (GLASSMORPHISM) ---
+                // --- GİRİŞ ALANLARI (GLASSMORPHISM) ---
                 _buildGlassInput(
                   controller: _emailController,
                   label: l10n.email,
@@ -212,7 +214,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // --- GLASSMORPHISM INPUT TASARIMI ---
+  // --- Tasarım Elemanları ---
+  /// Glassmorphism efektli metin giriş alanı.
   Widget _buildGlassInput({
     required TextEditingController controller,
     required String label,

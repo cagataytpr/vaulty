@@ -3,6 +3,9 @@ import 'package:vaulty/main.dart';
 import 'package:vaulty/views/auth/login_screen.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
+/// Kullanıcı tanıtım ekranı (Onboarding).
+/// 
+/// Uygulama özelliklerini tanıtan sayfalar ve geçiş animasyonlarını içerir.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -18,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    // Verileri siber temaya göre güncelledik - HERE WE BUILD THE LIST DYNAMICALLY TO USE l10n
+    // Tanıtım verilerini lokalizasyon desteğiyle oluştur
     final List<Map<String, dynamic>> onboardingData = [
       {
         "title": l10n.onboardingTitle1,
@@ -63,7 +66,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // İkon Alanı (Parlayan Efektli)
+                    // İkon Alanı
                     Container(
                       padding: const EdgeInsets.all(30),
                       decoration: BoxDecoration(
@@ -184,7 +187,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             const SizedBox(height: 80),
             
-            // Keşfet Butonu (Neon Tasarım)
+            // Keşfet Butonu
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),

@@ -4,7 +4,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Veri dışa aktarma işlemlerini yöneten servis.
 class ExportService {
+  /// Verilen şifre listesini PDF formatında oluşturur ve paylaşma penceresini açar.
   static Future<void> exportPasswordsToPdf(List<QueryDocumentSnapshot> docs) async {
     final pdf = pw.Document();
 
@@ -15,10 +17,10 @@ class ExportService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text("Vaulty - Sifre Yedekleme Raporu", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.Text("Vaulty - Şifre Yedekleme Raporu", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 20),
               pw.TableHelper.fromTextArray(
-                headers: ['Baslik', 'Sifre'],
+                headers: ['Başlık', 'Şifre'],
                 data: docs.map((doc) => [doc['title'].toString(), doc['password'].toString()]).toList(),
               ),
             ],

@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'dart:math';
 import 'package:vaulty/l10n/app_localizations.dart';
 
+/// Güvenli rastgele şifre oluşturma sayfası.
+/// 
+/// Kullanıcının belirlediği kriterlere (uzunluk, karakter tipleri) göre şifre üretir.
 class PasswordGeneratorPage extends StatefulWidget {
   const PasswordGeneratorPage({super.key});
 
@@ -17,6 +20,7 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
   bool _hasCapital = true;
   String _generatedPassword = "";
 
+  /// Belirlenen ayarlara göre rastgele bir şifre üretir.
   void _generate() {
     const letters = "abcdefghijklmnopqrstuvwxyz";
     const capitalLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -55,7 +59,7 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- ÜRETİLEN ŞİFRE ALANI (GLASS PANEL) ---
+              // --- ÜRETİLEN ŞİFRE ALANI ---
               Container(
                 padding: const EdgeInsets.all(30),
                 decoration: BoxDecoration(
@@ -149,7 +153,7 @@ class _PasswordGeneratorPageState extends State<PasswordGeneratorPage> {
                 child: Text(l10n.generatePassword.toUpperCase(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
 
-              // 🚀 KRİTİK: Butonu SnakeNavigationBar'ın altından kurtaran boşluk
+              // Alt gezinme çubuğu (BottomNavigationBar) için boşluk bırak
               const SizedBox(height: 120),
             ],
           ),

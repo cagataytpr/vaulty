@@ -9,6 +9,9 @@ import 'package:vaulty/views/auth/registerscreen.dart';
 
 
 
+/// Kullanıcı giriş ekranı.
+/// 
+/// E-posta/Şifre girişi, biyometrik kilit ekranı ve kayıt olma seçeneklerini sunar.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -65,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (userCredential.user != null) {
-        // Strict Verification Logic
+        // E-posta doğrulamasını zorunlu kıl
         await userCredential.user!.reload();
         if (!userCredential.user!.emailVerified) {
           await FirebaseAuth.instance.signOut();
@@ -80,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        // Set Session Key (In-Memory)
+        // Oturum anahtarını (Session Key) belleğe kaydet
         await AuthService.loginWithPassword(_passwordController.text);
 
         Navigator.pushReplacement(
@@ -131,11 +134,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     if (_currentUser != null) {
-      // If user is logged in (Firebase) but defined genericly or locked
-      // We check if session is active? 
-      // Actually per logic requested: session key is memory only. 
-      // If app restarts, _sessionKey is null, but Firebase user is persistent.
-      // So we show "Locked Mode" (Biometric Unlock Screen)
+      // Eğer kullanıcı Firebase'de oturum açmışsa ancak uygulama yeniden başlatılmışsa
+      // (bellekteki anahtar silinmişse), 'Kilitli Mod' (Biyometrik Giriş) gösterilir.
       return _buildLockedMode();
     }
     return _buildLoginMode();
@@ -174,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   const SizedBox(height: 50),
 
-                  // Unlock Button
+                  // Kilit Açma Butonu
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -224,27 +224,6 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 20),
                 
-                // --- DEV MODE ---
-                Align(
-                  alignment: Alignment.topRight,
-                  child: InkWell(
-                    onTap: () {
-                      _emailController.text = "11feyza@gmail.com";
-                      _passwordController.text = "11feyza@gmail.com";
-                      loginUser();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha:0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.withValues(alpha:0.5)),
-                      ),
-                      child: const Text("DEV MODE", style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ),
-
                 const SizedBox(height: 20),
 
                 // --- LOGO ---
@@ -273,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 50),
 
-                // --- INPUTLAR (GLASSMORPHISM) ---
+                // --- GİRİŞ ALANLARI (GLASSMORPHISM) ---
                 _buildGlassInput(
                   controller: _emailController,
                   label: l10n.email,

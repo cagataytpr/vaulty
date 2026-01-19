@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:vaulty/main.dart'; // 🚀 KRİTİK İMPORT: VaultyApp'i tanıması için şart!
+import 'package:vaulty/main.dart'; // VaultyApp.of() erişimi için
 
+/// Uygulama başlangıç ekranı (Splash Screen).
+/// 
+/// Animasyonları gösterir ve açılış yönlendirmesini (Login/Home/Onboarding) belirler.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -28,14 +31,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack), // Kesin çalışan eğri
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
     _controller.forward();
 
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
-        // 🚀 main.dart'taki akış kontrolüne soruyoruz
+        // Yönlendirme kararını main.dart üzerinden al
         final nextScreen = VaultyApp.of(context)!.getNextScreen(); 
         
         Navigator.pushReplacement(

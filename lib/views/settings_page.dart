@@ -10,6 +10,9 @@ import 'package:vaulty/data/services/auth_service.dart';
 import 'package:vaulty/view_models/locale_view_model.dart';
 
 
+/// Uygulama ayarları sayfası.
+/// 
+/// Tema, dil seçimi ve veri yedekleme gibi genel konfigürasyonları içerir.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -19,10 +22,10 @@ class SettingsPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final localeViewModel = context.watch<LocaleViewModel>();
 
-    // Mevcut temanın aydınlık mı karanlık mı olduğunu anlık yakalıyoruz
+    // Mevcut temanın aydınlık mı karanlık mı olduğunu kontrol et
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Tema bazlı ana renkler
+    // Tema bazlı renk tanımları
     Color mainTextColor = isDark ? Colors.white : Colors.black87;
     Color subTextColor = isDark ? Colors.white54 : Colors.black54;
     Color cardBgColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05);

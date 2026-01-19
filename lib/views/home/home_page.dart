@@ -6,7 +6,6 @@ import 'package:vaulty/view_models/home_view_model.dart';
 import 'package:vaulty/views/home/widgets/password_card.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
-// Old imports to be redirected or removed
 import 'package:vaulty/views/home/widgets/add_password_sheet.dart';
 import 'package:vaulty/views/password_generator_page.dart';
 import 'package:vaulty/views/settings_page.dart';
@@ -131,7 +130,7 @@ class VaultListBody extends StatefulWidget {
 class _VaultListBodyState extends State<VaultListBody> {
   bool _showReport = false;
   
-  // A controller to keep the TextField query in sync with ViewModel (optional but good practice)
+  // Arama metnini ViewModel ile senkronize tutmak için controller
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -140,7 +139,7 @@ class _VaultListBodyState extends State<VaultListBody> {
     _checkDailyReportStatus();
   }
   
-  // NOTE: This lifecycle check is fine in UI as it is purely presentation logic preference
+  /// Günlük güvenlik raporu durumunu kontrol eder.
   Future<void> _checkDailyReportStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final String today = DateTime.now().toIso8601String().substring(0, 10);
@@ -153,20 +152,7 @@ class _VaultListBodyState extends State<VaultListBody> {
   }
 
   void _showRiskAnalysis(BuildContext context, HomeViewModel viewModel) {
-    // We can allow ViewModel to give us a raw list or structured risk list.
-    // For now, we replicate the logic or ask ViewModel.
-    // Let's implement a simple dialog here using viewModel.allPasswordsRaw which we exposed.
-    
-    // Ideally this logic should also be in ViewModel returning a list of "RiskItems".
-    // But per instructions, keeping UI design same.
-    // Let's do the calculation here lightly or move it to VM completely.
-    // VM already did `_performAudit`. We just show the UI.
-    
-    // We already have `_riskCount` in VM.
-    // To show the *details*, we might need to iterate again or add `getRisks()` to VM.
-    // Let's iterate here for now using `decryptPassword`.
-    
-    // Use ViewModel to get the report
+    // ViewModel üzerinden güvenlik raporunu al
     final risks = viewModel.getSecurityReport(context);
 
     showModalBottomSheet(
@@ -244,8 +230,8 @@ class _VaultListBodyState extends State<VaultListBody> {
               ),
             ),
 
-            // --- RISK BANDI ---
-            // Only show if daily check passed, risk exists, and not searching
+            // --- RİSK BANDI ---
+            // Günlük kontrol yapıldıysa, risk varsa ve arama yapılmıyorsa göster
             if (_showReport && viewModel.riskCount > 0 && viewModel.searchQuery.isEmpty)
               GestureDetector(
                 onTap: () => _showRiskAnalysis(context, viewModel),
@@ -322,8 +308,7 @@ class _VaultListBodyState extends State<VaultListBody> {
       itemBuilder: (context, index) {
         var passwordData = viewModel.passwords[index];
         
-        // Pass animation controller if needed, but for simple list, 
-        // we can use standard animation or the same TweenAnimationBuilder as before
+        // Liste animasyonu için TweenAnimationBuilder
         return TweenAnimationBuilder(
            duration: Duration(milliseconds: 400 + (index * 50)),
            tween: Tween<double>(begin: 0, end: 1),

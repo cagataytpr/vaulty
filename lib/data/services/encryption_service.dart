@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart'; // For compute
+import 'package:flutter/foundation.dart';
 
 import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import 'package:pointycastle/export.dart';
@@ -9,9 +9,12 @@ import '../../core/exceptions.dart';
 
 class EncryptionService {
   static const int _pbkdf2Iterations = 200000;
-  static const int _keyLength = 32; // 256 bits
+  static const int _keyLength = 32;
 
-  // 1. Public Key Derivation (Heavy Operation)
+  /// PBKDF2 algoritması ile şifreden kriptografik anahtar türetir.
+  /// 
+  /// Bu işlem işlemci maliyetlidir, bu nedenle ana thread'i bloklamamak için
+  /// `compute` veya arka plan servislerinde kullanılması önerilir.
   static Uint8List deriveKey(String password, Uint8List salt) {
     final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
       ..init(Pbkdf2Parameters(salt, _pbkdf2Iterations, _keyLength));
@@ -19,8 +22,9 @@ class EncryptionService {
     return pbkdf2.process(utf8.encode(password));
   }
 
-  // 2. Encrypt using Pre-Derived Key (Fast AES)
-  // Format: IV:Cipher
+  /// Veriyi AES algoritması ile şifreler.
+  /// 
+  /// Format: `IV:Cipher` (Initialization Vector ve Şifreli Metin base64 formatında ayrılmış olarak döner).
   static String encrypt(String data, Uint8List keyBytes) {
     try {
       final key = encrypt_pkg.Key(keyBytes);
@@ -34,12 +38,12 @@ class EncryptionService {
     }
   }
 
-  // 3. Decrypt using Pre-Derived Key (Fast AES)
+  /// Şifrelenmiş veriyi (IV:Cipher formatında) çözer.
   static String decrypt(String encryptedData, Uint8List keyBytes) {
     try {
       final parts = encryptedData.split(':');
       if (parts.length != 2) {
-        throw DecryptionException("Invalid format. Expected IV:Cipher");
+        throw DecryptionException("Geçersiz format. Beklenen: IV:Cipher");
       }
 
       final iv = encrypt_pkg.IV.fromBase64(parts[0]);
@@ -51,18 +55,19 @@ class EncryptionService {
       return encrypter.decrypt64(cipherText, iv: iv);
     } catch (e) {
       if (e is DecryptionException) rethrow;
-      throw DecryptionException("Decryption failed", e);
+      throw DecryptionException("Şifre çözme hatası", e);
     }
   }
 
-  // --- ASYNC METHODS ---
-  // AES is fast enough to run on main thread for single items, 
-  // avoiding Isolate serialization overhead.
+  // --- ASENKRON METOTLAR ---
   
+  /// Veriyi asenkron olarak şifreler.
+  /// (AES tekil bloklar için yeterince hızlıdır ancak API tutarlılığı için eklenmiştir)
   static Future<String> encryptAsync(String data, Uint8List key) async {
     return encrypt(data, key);
   }
 
+  /// Veriyi asenkron olarak çözer.
   static Future<String> decryptAsync(String encryptedData, Uint8List key) async {
     return decrypt(encryptedData, key);
   }

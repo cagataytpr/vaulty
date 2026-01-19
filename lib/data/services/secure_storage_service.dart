@@ -10,7 +10,7 @@ class SecureStorageService {
 
   SecureStorageService._internal();
 
-  // Storage instance with configuration
+  /// Güvenli depolama yapılandırması.
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
@@ -23,34 +23,41 @@ class SecureStorageService {
   // Keys
   static const String _kMasterKey = 'vaulty_master_key';
 
-  // --- Generic Methods ---
+  // --- Genel Metotlar ---
 
+  /// Belirtilen anahtar-değer çiftini güvenli alana yazar.
   Future<void> write(String key, String value) async {
     await _storage.write(key: key, value: value);
   }
 
+  /// Belirtilen anahtara ait değeri okur.
   Future<String?> read(String key) async {
     return await _storage.read(key: key);
   }
 
+  /// Belirtilen anahtarı siler.
   Future<void> delete(String key) async {
     await _storage.delete(key: key);
   }
 
+  /// Tüm güvenli depolama alanını temizler.
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }
 
-  // --- Master Key Specific Methods ---
+  // --- Master Key Metotları ---
 
+  /// Master anahtarı güvenli alana kaydeder.
   Future<void> storeMasterKey(String masterKey) async {
     await write(_kMasterKey, masterKey);
   }
 
+  /// Kayıtlı master anahtarı döndürür.
   Future<String?> getMasterKey() async {
     return await read(_kMasterKey);
   }
 
+  /// Master anahtarı siler.
   Future<void> clearMasterKey() async {
     await delete(_kMasterKey);
   }

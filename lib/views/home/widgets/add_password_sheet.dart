@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../../../view_models/home_view_model.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
+/// Yeni şifre ekleme modal sayfası.
+/// 
+/// Kullanıcıdan site adı ve şifre bilgilerini alır, şifre gücünü analiz eder.
 class AddPasswordSheet extends StatefulWidget {
   const AddPasswordSheet({super.key});
 
@@ -14,6 +17,10 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
   final _titleController = TextEditingController();
   final _passController = TextEditingController();
 
+  /// Girilen şifrenin güvenliğini kontrol eder.
+  /// 
+  /// Kriterler: Uzunluk (8+), Büyük Harf, Sayı, Özel Karakter.
+  /// Dönen değer, şifre gücü yüzdesini ve renk kodunu içerir.
   Map<String, dynamic> _checkStrength(String password, AppLocalizations l10n) {
     if (password.isEmpty) return {"label": "", "color": Colors.transparent, "percent": 0.0};
     
@@ -29,14 +36,14 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
     return {"label": l10n.cryptoLevel.toUpperCase(), "color": Colors.greenAccent, "percent": 1.0};
   }
 
+  /// Şifreyi kaydeder ve modalı kapatır.
   void _save(BuildContext context) async {
     if (_titleController.text.isNotEmpty) {
-      // Use Provider to add password
+      // ViewModel üzerinden yeni şifreyi ekle
       await context.read<HomeViewModel>().addNewPassword(
         _titleController.text, 
         _passController.text
       );
-      
       
       if (!mounted) return;
       Navigator.pop(context);
@@ -59,7 +66,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
         color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
-      child: SingleChildScrollView( // 🚀 ÇÖZÜM: İçeriği kaydırılabilir yaptık
+      child: SingleChildScrollView( // İçeriğin kaydırılabilir olmasını sağlar
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
           child: Column(
@@ -159,7 +166,7 @@ class _AddPasswordSheetState extends State<AddPasswordSheet> {
     );
   }
 
-  // Özel Terminal Tipi Input Widget
+  // --- Özel Tasarım Girdi Alanı ---
   Widget _buildTerminalInput({
     required TextEditingController controller,
     required String label,

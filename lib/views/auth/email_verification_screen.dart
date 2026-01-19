@@ -5,6 +5,9 @@ import 'package:vaulty/data/services/auth_service.dart';
 import 'package:vaulty/views/home/home_page.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
+/// E-posta doğrulama ekranı.
+/// 
+/// Kullanıcı kayıt olduktan sonra e-postasını onaylaması için gösterilen bekleme ekranıdır.
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({super.key});
 
@@ -19,30 +22,30 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   @override
   void initState() {
     super.initState();
-    // Sayfa açılır açılmaz bir tane gönderelim
+    // Sayfa açıldığında doğrulama e-postası gönder
     AuthService.sendVerificationEmail();
 
-    // Her 3 saniyede bir kontrol et (Kullanıcı linke tıklarsa anında anlasın)
+    // Her 3 saniyede bir doğrulama durumunu kontrol et
     timer = Timer.periodic(const Duration(seconds: 3), (_) => checkEmailVerified());
   }
 
   Future checkEmailVerified() async {
-  // Bu satır gidip Firebase sunucusundan güncel durumu çeker
-  await FirebaseAuth.instance.currentUser?.reload(); 
-  
-  // Güncel durumu değişkene atar
-  bool verified = FirebaseAuth.instance.currentUser!.emailVerified;
-  
-  if (verified) {
-    // Onaylandıysa direkt ana sayfaya uçurur
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (context) => const HomePage()),
-  (route) => false,
-);
+    // Firebase'den güncel kullanıcı durumunu çek
+    await FirebaseAuth.instance.currentUser?.reload(); 
+    
+    // Doğrulama durumunu kontrol et
+    bool verified = FirebaseAuth.instance.currentUser!.emailVerified;
+    
+    if (verified) {
+      // Doğrulama başarılıysa ana sayfaya yönlendir
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+        (route) => false,
+      );
+    }
   }
-}
 
   @override
   void dispose() {
