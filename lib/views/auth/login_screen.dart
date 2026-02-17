@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vaulty/data/services/auth_service.dart';
+import 'package:vaulty/data/services/encryption_service.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 import '../home/home_page.dart';
 import 'package:vaulty/views/auth/registerscreen.dart';
@@ -86,6 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
         // Oturum anahtarını (Session Key) belleğe kaydet
         await AuthService.loginWithPassword(_passwordController.text);
 
+        // SHA-256 ile şifreleme anahtarını türet (cross-platform senkronizasyon)
+        EncryptionService.setKeyFromPassword(_passwordController.text.trim());
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
@@ -106,6 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _unlockWithBiometrics() async {
+    // Windows'ta biyometrik donanım olmadığından çökmeyi önle
+    if (Platform.isWindows) return;
+
     bool authenticated = await AuthService.loginWithBiometrics();
     
     if (authenticated) {

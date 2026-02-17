@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:developer';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'secure_storage_service.dart';
 import 'encryption_service.dart';
@@ -14,29 +14,19 @@ class AuthService {
   static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   static final SecureStorageService _secureStorage = SecureStorageService();
   
-  /// Anahtar türetme işlemi için kullanılan sabit uygulama tuzu (salt).
-  static final Uint8List _appSalt = Uint8List.fromList(utf8.encode('Vaulty_Static_Salt_v1'));
-
   // --- Oturum Yönetimi ---
-  /// Bellekte tutulan türetilmiş anahtar (AES işlemlerine hazır).
-  static Uint8List? _sessionKey;
-
-  static Uint8List? get sessionKey => _sessionKey;
+  /// Oturum anahtarı artık EncryptionService üzerinden yönetilir.
+  static Uint8List? get sessionKey => EncryptionService.currentKey;
 
   /// Oturum anahtarını manuel olarak ayarlar.
   static void setSessionKey(Uint8List key) {
-    _sessionKey = key;
+    EncryptionService.setKey(key);
   }
 
   /// Aktif oturum anahtarını bellekten güvenli bir şekilde siler.
   /// Bellek alanını sıfırlayarak (zero-fill) güvenliği artırır.
   static void clearSession() {
-    if (_sessionKey != null) {
-      for (int i = 0; i < _sessionKey!.length; i++) {
-        _sessionKey![i] = 0;
-      }
-    }
-    _sessionKey = null;
+    EncryptionService.clearKey();
   }
 
   /// Kullanıcının e-posta ve şifre ile Firebase üzerinden giriş yapmasını sağlar.
@@ -47,21 +37,19 @@ class AuthService {
     );
   }
 
-  /// Master şifre ile giriş yapar ve şifreleme anahtarını türetir.
+  /// Master şifre ile giriş yapar ve SHA-256 ile şifreleme anahtarını türetir.
   /// 
-  /// Bu işlem sonucunda [_sessionKey] hesaplanır ve [SecureStorageService] üzerine kaydedilir.
-  /// Bu kayıt işlemi, daha sonraki biyometrik girişler için kritiktir.
+  /// Bu işlem sonucunda anahtar [EncryptionService] üzerine yüklenir
+  /// ve [SecureStorageService] üzerine kaydedilir (biyometrik giriş için).
   static Future<void> loginWithPassword(String password) async {
-    // 1. Anahtarı arka planda türet
-    _sessionKey = await compute(_deriveKeyTask, {
-      'password': password,
-      'salt': _appSalt,
-    });
+    // 1. SHA-256 ile deterministik anahtar türet
+    EncryptionService.setKeyFromPassword(password);
 
-    // 2. Anahtarı güvenli depolama alanına kaydet
-    if (_sessionKey != null) {
+    // 2. Anahtarı güvenli depolama alanına kaydet (biyometrik giriş için)
+    final key = EncryptionService.currentKey;
+    if (key != null) {
       try {
-        await _secureStorage.storeMasterKey(base64.encode(_sessionKey!));
+        await _secureStorage.storeMasterKey(base64.encode(key));
       } catch (e) {
         log("Anahtar kaydedilemedi: $e");
       }
@@ -80,8 +68,8 @@ class AuthService {
       String? encodedKey = await _secureStorage.getMasterKey();
 
       if (encodedKey != null) {
-        // Saklanan anahtar derive edilmiş haldedir (base64)
-        setSessionKey(base64.decode(encodedKey));
+        // Saklanan anahtar SHA-256 ile türetilmiş haldedir (base64)
+        EncryptionService.setKey(Uint8List.fromList(base64.decode(encodedKey)));
         return true;
       } else {
         return false;
@@ -108,6 +96,25 @@ class AuthService {
       log("Enable biometrics failed: $e");
       return false;
     }
+  }
+
+  /// Yeni kullanıcı kaydı oluşturur, doğrulama e-postası gönderir ve oturumu kapatır.
+  ///
+  /// Kayıt sonrası oturumu hemen kapatarak kullanıcının e-posta doğrulaması
+  /// yapılmadan Ana Sayfaya yönlendirilmesini önler.
+  static Future<UserCredential> registerWithEmailAndPassword(String email, String password) async {
+    UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: password.trim(),
+    );
+
+    // Doğrulama e-postasını gönder
+    await userCredential.user?.sendEmailVerification();
+
+    // KRİTİK: Oturumu hemen kapat — kullanıcı doğrulama yapmadan giriş yapamamalı
+    await _firebaseAuth.signOut();
+
+    return userCredential;
   }
 
   static Future<void> sendPasswordReset(String email) async {
@@ -200,7 +207,3 @@ class AuthService {
   }
 }
 
-// Anahtar türetme işlemi için arka planda (Isolate) çalışacak görev fonksiyonu
-Uint8List _deriveKeyTask(Map<String, dynamic> params) {
-  return EncryptionService.deriveKey(params['password'] as String, params['salt'] as Uint8List);
-}

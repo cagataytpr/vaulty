@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
+import 'dart:io';
+import 'package:window_manager/window_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +24,22 @@ void main() async {
   // Geliştirme notu: `signOut`, test sırasında başlangıç durumunu resetlemek için kullanılıyor.
   // Prodüksiyonda bu satır kaldırılmalı veya yorum satırına alınmalıdır.
   // await FirebaseAuth.instance.signOut(); 
-  
+
+  // Windows masaüstü pencere ayarları
+  if (Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(400, 750),
+      center: true,
+      title: 'Vaulty Desktop',
+      skipTaskbar: false,
+    );
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
+
   runApp(
     MultiProvider(
       providers: [

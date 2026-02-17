@@ -302,21 +302,55 @@ class _VaultListBodyState extends State<VaultListBody> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(15, 10, 15, 120),
-      itemCount: viewModel.passwords.length,
-      itemBuilder: (context, index) {
-        var passwordData = viewModel.passwords[index];
-        
-        // Liste animasyonu için TweenAnimationBuilder
-        return TweenAnimationBuilder(
-           duration: Duration(milliseconds: 400 + (index * 50)),
-           tween: Tween<double>(begin: 0, end: 1),
-           builder: (context, double value, child) => Opacity(
-             opacity: value,
-             child: Transform.translate(offset: Offset(0, 30 * (1 - value)), child: child),
-           ),
-           child: PasswordCard(password: passwordData),
+    // Responsive düzen: Dar ekranlarda liste, geniş ekranlarda ızgara görünümü
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 800;
+
+        if (isDesktop) {
+          // Masaüstü: Genişliğe göre 2 veya 3 sütunlu ızgara
+          final crossAxisCount = constraints.maxWidth >= 1200 ? 3 : 2;
+
+          return GridView.builder(
+            padding: const EdgeInsets.fromLTRB(15, 10, 15, 120),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.5,
+            ),
+            itemCount: viewModel.passwords.length,
+            itemBuilder: (context, index) {
+              var passwordData = viewModel.passwords[index];
+              return TweenAnimationBuilder(
+                duration: Duration(milliseconds: 400 + (index * 50)),
+                tween: Tween<double>(begin: 0, end: 1),
+                builder: (context, double value, child) => Opacity(
+                  opacity: value,
+                  child: Transform.translate(offset: Offset(0, 30 * (1 - value)), child: child),
+                ),
+                child: PasswordCard(password: passwordData),
+              );
+            },
+          );
+        }
+
+        // Mobil: Mevcut dikey liste görünümü
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(15, 10, 15, 120),
+          itemCount: viewModel.passwords.length,
+          itemBuilder: (context, index) {
+            var passwordData = viewModel.passwords[index];
+            return TweenAnimationBuilder(
+              duration: Duration(milliseconds: 400 + (index * 50)),
+              tween: Tween<double>(begin: 0, end: 1),
+              builder: (context, double value, child) => Opacity(
+                opacity: value,
+                child: Transform.translate(offset: Offset(0, 30 * (1 - value)), child: child),
+              ),
+              child: PasswordCard(password: passwordData),
+            );
+          },
         );
       },
     );

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:vaulty/views/home/home_page.dart';
 import 'package:vaulty/data/services/auth_service.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
@@ -37,23 +35,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      // 1. Kullanıcıyı Firebase Auth üzerinde oluşturur
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      // 1. Kullanıcıyı oluştur, doğrulama e-postası gönder ve oturumu kapat
+      await AuthService.registerWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
-
-      // 2. Doğrulama e-postasını gönder
-      await userCredential.user?.sendEmailVerification();
-
-      // 3. Otomatik Giriş ve Oturum Anahtarının Ayarlanması
-      // Kullanıcı deneyimini iyileştirmek için kayıt sonrası doğrudan oturum açılır 
-      // ve şifreleme anahtarı (session key) oluşturulur.
-      await AuthService.loginWithPassword(_passwordController.text.trim());
 
       if (!mounted) return;
 
-      // Kullanıcıya başarılı işlem mesajı göster
+      setState(() => _isLoading = false);
+
+      // Kullanıcıya başarılı kayıt ve doğrulama mesajı göster
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.registerSuccess),
@@ -62,12 +54,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
 
-      // 4. Ana sayfaya yönlendir ve geçmişi temizle
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-        (route) => false,
-      );
+      // Giriş ekranına geri dön — kullanıcı doğrulama sonrası buradan giriş yapacak
+      Navigator.pop(context);
 
     } catch (e) {
       setState(() => _isLoading = false);

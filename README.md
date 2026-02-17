@@ -1,67 +1,64 @@
-# 🛡️ Vaulty - Personal Password Manager Project
+# 🛡️ Vaulty - Cross-Platform Password Manager
 
 <div align="center">
 
-![Flutter](https://img.shields.io/badge/Flutter-3.10.3-%2302569B?logo=flutter)
+![Flutter](https://img.shields.io/badge/Flutter-3.19-%2302569B?logo=flutter)
+![Windows](https://img.shields.io/badge/Windows-Support-%230078D6?logo=windows)
 ![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-%23FFCA28?logo=firebase)
 ![Dart](https://img.shields.io/badge/Dart-3.0-%230175C2?logo=dart)
 
-**A journey into Mobile Security: From basic implementation to Industry-Standard Encryption.**
+**A journey into Security: From basic mobile app to a synchronized Cross-Platform tool.**
 
 </div>
 
 ---
 
 > 🎓 **Project Story & Evolution:**
-> This project started as a standard password manager, but it turned into a huge learning experience. Initially, I implemented a basic encryption logic based on my early knowledge. However, **I didn't stop there.**
+> This project started as a standard password manager app, but it turned into a huge learning experience for me. Initially, I implemented a basic logic based on my early knowledge. However, **I didn't stop there.**
 >
-> I researched mobile security standards and used AI tools to audit my own code. I learned that my initial approach (using static keys or simple hashing) was vulnerable. **So, I refactored the entire core.** I learned about **PBKDF2**, **Salting**, and **Secure Storage**, and implemented them to replace the old logic. This project represents not just an app, but my growth as a developer understanding "Production-Grade" security.
+> I researched security standards and challenged myself to make this app work **everywhere**. I learned that my initial approach (local-only storage) wouldn't work for a user who wants to access their passwords on both their Phone and PC. **So, I refactored the entire core.** I learned about **Deterministic Key Derivation**, **Hashing**, and **Cross-Platform Architecture**. This project represents not just an app, but my growth as a developer understanding "Production-Grade" requirements.
 
 ---
 
 ## 💡 Motivation
 
-As a Junior Mobile Developer, I wanted to challenge myself beyond simple UI/UX applications. I realized that handling user data requires responsibility. Vaulty became my sandbox to learn:
-* **How to fail and fix:** Recognizing security flaws in my own code and fixing them.
-* **Cryptography:** Understanding why `SHA-256` isn't enough for passwords and why we need `PBKDF2`.
-* **Performance:** How to decrypt data without freezing the UI using Isolates.
+As a Junior Developer, I wanted to challenge myself beyond simple UI/UX applications. I realized that handling user data requires responsibility. Vaulty became my sandbox to learn:
+* **How to fail and fix:** Recognizing architectural flaws in my own code and refactoring them without fear.
+* **Cryptography:** Understanding how to securely sync data between devices without exposing raw passwords.
+* **Platform Specifics:** Handling Android's Biometrics and Windows' Window Management in the same codebase.
 
 ## 🛠️ Technical Highlights & The Refactor
 
-### 🔒 Security (The "Hard" Lessons)
-In the first version, I used a simpler logic. After my research, I upgraded the system to meet industry standards:
+### 🔒 Security & Architecture (The "Hard" Lessons)
+In the first version, I used a simpler, local-only encryption. After deciding to support **Windows Desktop**, I upgraded the system to meet cross-platform standards:
 
-* **Key Derivation (PBKDF2):** I learned that simple hashing is vulnerable to brute-force attacks. I switched to **PBKDF2-HMAC-SHA256** with **10,000 iterations** to derive encryption keys, making it computationally expensive for attackers to crack.
-* **Salting & Random IVs:** To prevent "Rainbow Table" attacks, I now generate a unique **Salt** and **Initialization Vector (IV)** for every single password.
-* **Secure Storage:** Instead of keeping sensitive keys in memory or basic preferences, I integrated `flutter_secure_storage` to use the device's hardware-backed security (Keystore/Keychain).
-* **Memory Hygiene:** Implemented a session manager that wipes the master key from RAM when the app goes to the background.
+* **Cross-Platform Sync:** I implemented a deterministic key derivation strategy (using `SHA-256`) that generates the same Encryption Key from the user's Master Password on any device. This allows you to encrypt on Mobile and decrypt on PC instantly.
+* **Secure Storage:** Integrated `flutter_secure_storage` to use the device's hardware-backed security (Keystore on Android, Credential Locker on Windows).
+* **Responsive Design:** The app adapts its layout intelligently—showing a simple list on mobile but expanding to a Grid View dashboard on Desktop.
 
-### ⚡ Performance (Isolates)
-I realized that decrypting multiple passwords for the "Security Audit" feature was dropping the FPS.
-* **Solution:** I moved the audit logic to a separate thread using Flutter's **`compute`** function. This keeps the UI buttery smooth while heavy calculations happen in the background.
-
-### 🏗️ Architecture (MVVM)
-I followed strict separation of concerns to make the code testable and readable:
-* **Data Layer:** Repositories and Services (Encryption, Auth, SecureStorage).
-* **ViewModel Layer:** Manages state and holds the "Session" logic safely.
-* **View Layer:** Reactive UI components.
+### ⚡ Performance
+I realized that decrypting multiple passwords could freeze the UI.
+* **Solution:** I optimized the encryption logic and ensured heavy tasks don't block the main UI thread, keeping the app buttery smooth even on older devices.
 
 ## 📦 Tech Stack
 
 * **Framework:** Flutter & Dart
 * **Backend:** Firebase (Auth & Firestore)
-* **Security:**
+* **Platforms:** Android, iOS, Windows
+* **Security & Core:**
     * `flutter_secure_storage`: For Hardware-backed key storage.
     * `encrypt`: For AES encryption.
-    * `pointycastle` (via custom logic): For PBKDF2 Key Derivation.
-    * `local_auth`: Biometrics.
+    * `crypto`: For SHA-256 Key Derivation.
+    * `window_manager`: For Desktop window sizing and behavior.
+    * `local_auth`: Biometrics (Fingerprint/FaceID).
 * **State Management:** Provider
+* **Localization:** l10n (Multi-language support)
 
 ## 🏁 Getting Started
 
 ### Prerequisites
 * Flutter SDK (v3.10.3+)
-* Firebase Project (google-services.json required)
+* Firebase Project (`google-services.json` required)
 
 ### Installation
 
@@ -74,15 +71,15 @@ I followed strict separation of concerns to make the code testable and readable:
     flutter pub get
     ```
 3.  **Run the application:**
-    ```bash
-    flutter run
-    ```
+    * For Mobile: `flutter run`
+    * For Windows: `flutter run -d windows`
 
 ## 🔮 Future Improvements (Roadmap)
 
 I am constantly learning and upgrading this project. Next steps:
-* [ ] **Unit Testing:** I want to write unit tests specifically for the new `EncryptionService` to ensure no regression happens.
-* [ ] **Desktop Support:** Exploring Flutter for Windows/MacOS to make Vaulty cross-platform.
+* [ ] **Unit Testing:** I want to write unit tests specifically for the new `EncryptionService`.
+* [ ] **Password Generator:** Adding a customizable strong password generator tool.
+* [x] **Desktop Support:** (Completed! ✅ Windows version is live).
 
 ---
 

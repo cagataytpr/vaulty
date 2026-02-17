@@ -1,5 +1,9 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+
+# Firebase C++ SDK'nın eski cmake_minimum_required sürümüyle uyumluluk sağla.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "Minimum CMake policy version" FORCE)
+
 project(vaulty LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change

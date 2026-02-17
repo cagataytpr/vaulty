@@ -8,7 +8,7 @@ import '../data/repositories/password_repository.dart';
 import '../data/services/auth_service.dart';
 import 'package:vaulty/l10n/app_localizations.dart';
 
-import 'dart:typed_data'; // For Uint8List
+// For Uint8List
 
 /// Isolate işlemine veri aktarmak için kullanılan DTO sınıfı.
 class AuditParams {
