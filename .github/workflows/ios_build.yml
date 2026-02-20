@@ -18,6 +18,12 @@ jobs:
       - name: Bagimliliklari Indir
         run: flutter pub get
 
+      - name: iOS Kutuphanelerini Kur (CocoaPods)
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
       - name: iOS Icin Derle (Imzasiz)
         run: flutter build ios --release --no-codesign 
 
