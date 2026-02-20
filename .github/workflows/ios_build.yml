@@ -18,10 +18,14 @@ jobs:
       - name: iOS Iskeletini Olustur
         run: flutter create . --platforms=ios
 
-      - name: iOS Surumunu Yukselt (Fix)
+      - name: iOS Surumunu 15.0 Yap (Kesin Cozum)
         run: |
-          sed -i '' 's/platform :ios, .*/platform :ios, '\''14.0'\''/g' ios/Podfile
-          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 14.0;/g' ios/Runner.xcodeproj/project.pbxproj
+          # Podfile'ın en başına platform satırını zorla ekle
+          echo "platform :ios, '15.0'" > ios/Podfile.tmp
+          cat ios/Podfile >> ios/Podfile.tmp
+          mv ios/Podfile.tmp ios/Podfile
+          # Proje ayarlarındaki hedefi de 15.0 yap
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' ios/Runner.xcodeproj/project.pbxproj
 
       - name: Bagimliliklari Indir
         run: flutter pub get
