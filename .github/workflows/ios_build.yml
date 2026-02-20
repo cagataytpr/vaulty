@@ -1,0 +1,35 @@
+name: iO
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: macos-latest 
+
+    steps:
+      - name: Projeyi Cek
+        uses: actions/checkout@v3
+
+      - name: Flutter Kur
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Bagimliliklari Indir
+        run: flutter pub get
+
+      - name: iOS Icin Derle (Imzasiz)
+        run: flutter build ios --release --no-codesign 
+
+      - name: IPA Dosyasini Sideload Icin Paketle
+        run: |
+          mkdir -p Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -r vaulty.ipa Payload
+
+      - name: IPA Dosyasini Bize Ver
+        uses: actions/upload-artifact@v4
+        with:
+          name: vaulty-ios-ipa
+          path: vaulty.ipa
